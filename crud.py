@@ -3,9 +3,6 @@ from models import Escuderia, Piloto
 from schemas import EscuderiaCreate, PilotoCreate
 from fastapi import HTTPException
 
-# ======================
-# ESCUDERIAS
-# ======================
 def get_escuderias(db: Session):
     return db.query(Escuderia).all()
 
@@ -37,9 +34,6 @@ def update_escuderia(db: Session, escuderia_id: int, escuderia_data: EscuderiaCr
     db.refresh(esc)
     return esc
 
-# ======================
-# PILOTOS
-# ======================
 def get_pilotos(db: Session):
     return db.query(Piloto).all()
 
@@ -47,14 +41,12 @@ def get_piloto_por_numero(db: Session, numero: int):
     return db.query(Piloto).filter(Piloto.numero == numero).first()
 
 def create_piloto(db: Session, piloto: PilotoCreate):
-    # 1️⃣ Validar que el usuario haya seleccionado una escudería
     if not piloto.escuderia_id:
         raise HTTPException(
             status_code=400,
             detail="Por favor seleccione alguna escudería disponible."
         )
     
-    # 2️⃣ Validar que la escudería exista
     escuderia = db.query(Escuderia).filter(Escuderia.id == piloto.escuderia_id).first()
     if not escuderia:
         raise HTTPException(
@@ -62,14 +54,12 @@ def create_piloto(db: Session, piloto: PilotoCreate):
             detail="La escudería seleccionada no existe."
         )
     
-    # 3️⃣ Validar que la escudería no tenga ya 2 pilotos
     if len(escuderia.pilotos) >= 2:
         raise HTTPException(
             status_code=400,
             detail=f"La escudería '{escuderia.nombre}' ya tiene 2 pilotos asignados."
         )
 
-    # 4️⃣ Crear el piloto
     db_piloto = Piloto(**piloto.dict())
     db.add(db_piloto)
     db.commit()

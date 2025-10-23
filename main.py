@@ -7,9 +7,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="API F1 - Pilotos y Escuderías")
 
-# ======================
-# DEPENDENCIA DE SESIÓN
-# ======================
+
 def get_db():
     db = SessionLocal()
     try:
@@ -17,9 +15,7 @@ def get_db():
     finally:
         db.close()
 
-# ======================
-# ESCUDERÍAS
-# ======================
+
 @app.post("/escuderias/", response_model=schemas.Escuderia)
 def crear_escuderia(escuderia: schemas.EscuderiaCreate, db: Session = Depends(get_db)):
     return crud.create_escuderia(db, escuderia)
@@ -42,19 +38,16 @@ def eliminar_escuderia(escuderia_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Escudería no encontrada")
     return {"mensaje": "Escudería eliminada correctamente"}
 
-# ======================
-# PILOTOS
-# ======================
+
 @app.post("/pilotos/", response_model=schemas.PilotoOut)
 def crear_piloto(piloto: schemas.PilotoCreate, db: Session = Depends(get_db)):
-    # Verificar si se envió escudería_id
+
     if not piloto.escuderia_id:
         raise HTTPException(
             status_code=400,
             detail="Por favor seleccione alguna escudería disponible."
         )
 
-    # Verificar que la escudería exista
     escuderia = db.query(models.Escuderia).filter(models.Escuderia.id == piloto.escuderia_id).first()
     if not escuderia:
         raise HTTPException(
@@ -62,7 +55,6 @@ def crear_piloto(piloto: schemas.PilotoCreate, db: Session = Depends(get_db)):
             detail="La escudería seleccionada no existe."
         )
 
-    # Verificar que no tenga más de 2 pilotos
     if len(escuderia.pilotos) >= 2:
         raise HTTPException(
             status_code=400,
@@ -87,14 +79,13 @@ def buscar_por_numero(numero: int, db: Session = Depends(get_db)):
 
 @app.put("/pilotos/{piloto_id}", response_model=schemas.PilotoOut)
 def editar_piloto(piloto_id: int, piloto: schemas.PilotoCreate, db: Session = Depends(get_db)):
-    # Verificar si se envió escudería_id
+
     if not piloto.escuderia_id:
         raise HTTPException(
             status_code=400,
             detail="Debe seleccionar una escudería válida para el piloto."
         )
 
-    # Verificar que la escudería exista
     escuderia = db.query(models.Escuderia).filter(models.Escuderia.id == piloto.escuderia_id).first()
     if not escuderia:
         raise HTTPException(
@@ -102,7 +93,6 @@ def editar_piloto(piloto_id: int, piloto: schemas.PilotoCreate, db: Session = De
             detail="La escudería seleccionada no existe."
         )
 
-    # Verificar límite de 2 pilotos (excluyendo al piloto actual)
     pilotos_escuderia = [p for p in escuderia.pilotos if p.id != piloto_id]
     if len(pilotos_escuderia) >= 2:
         raise HTTPException(

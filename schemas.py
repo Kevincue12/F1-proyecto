@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
 
-# ======== PILOTOS ========
 class PilotoBase(BaseModel):
     nombre: str
     numero: int
@@ -18,10 +17,9 @@ class PilotoOut(PilotoBase):
     id: int
 
     class Config:
-        from_attributes = True  # ✅ Actualizado para Pydantic v2
+        from_attributes = True 
 
 
-# ======== ESCUDERIAS ========
 class EscuderiaBase(BaseModel):
     nombre: str
     pais: str
@@ -34,7 +32,7 @@ class EscuderiaCreate(EscuderiaBase):
 
 class Escuderia(EscuderiaBase):
     id: int
-    pilotos: List["PilotoOut"] = []  # ✅ Se pone entre comillas para evitar NameError
+    pilotos: List["PilotoOut"] = []  
 
     class Config:
-        from_attributes = True  # ✅ Actualizado para Pydantic v2
+        from_attributes = True 
