@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 
+
 class PilotoBase(BaseModel):
     nombre: str
     numero: int
@@ -17,7 +18,7 @@ class PilotoOut(PilotoBase):
     id: int
 
     class Config:
-        from_attributes = True 
+        from_attributes = True  # antes orm_mode = True
 
 
 class EscuderiaBase(BaseModel):
@@ -32,7 +33,41 @@ class EscuderiaCreate(EscuderiaBase):
 
 class Escuderia(EscuderiaBase):
     id: int
-    pilotos: List["PilotoOut"] = []  
+    pilotos: List["PilotoOut"] = []
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+
+class GranPremioBase(BaseModel):
+    nombre: str
+    pais: str
+
+
+class GranPremioCreate(GranPremioBase):
+    pass
+
+
+class GranPremioOut(GranPremioBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class ResultadoBase(BaseModel):
+    posicion: int
+
+
+class ResultadoCreate(ResultadoBase):
+    piloto_numero: int
+    gran_premio_id: int
+
+
+class ResultadoOut(ResultadoBase):
+    id: int
+    piloto_id: int
+    gran_premio_id: int
+
+    class Config:
+        from_attributes = True
