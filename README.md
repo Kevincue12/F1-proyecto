@@ -1,58 +1,103 @@
-API F1 - Pilotos, Escuderías y Grandes Premios
+ 🏎️ API F1 - Pilotos, Escuderías y Grandes Premios
 
-Este proyecto es una API desarrollada con FastAPI y SQLAlchemy que permite gestionar información del mundo de la Fórmula 1, incluyendo pilotos, escuderías, grandes premios y resultados, además de generar reportes automáticos en Excel.
+Autor: Kevin Cuevas  
+Universidad Católica de Colombia
+Materia: Desarrollo de Software  
+
+---
+
+Descripción General
+
+Este proyecto es una API REST desarrollada con FastAPI y SQLAlchemy que permite gestionar información del mundo de la Fórmula 1, incluyendo pilotos, escuderías, grandes premios y resultados, además de generar reportes automáticos en Excel.
+
+El objetivo es demostrar la correcta implementación de relaciones entre modelos, persistencia de datos, reglas de negocio y la interacción completa mediante los métodos HTTP (GET, POST, PUT, PATCH, DELETE).
+
+---
 
 Características principales
 
 Gestión de Escuderías
-
-Crear, listar, editar y eliminar escuderías.
-
-Cada escudería puede tener máximo 2 pilotos.
+- Crear, listar, editar y eliminar escuderías.
+- Cada escudería puede tener máximo 2 pilotos.
 
 Gestión de Pilotos
-
-Crear, listar, editar y eliminar pilotos.
-
-Validación automática del número único de piloto.
-
-Asociación de pilotos con sus respectivas escuderías.
+- Crear, listar, editar y eliminar pilotos.
+- Validación automática del número único de piloto.
+- Asociación de pilotos con sus respectivas escuderías.
 
 Gestión de Grandes Premios
-
-Registrar Grandes Premios con fecha obligatoria.
-
-Consultar la lista de Grandes Premios creados.
+- Registrar grandes premios.
+- Consultar la lista de grandes premios creados.
 
 Registro de Resultados
+- Asignar posiciones a pilotos en cada gran premio.
+- Control de duplicados (no se repiten pilotos o posiciones en un mismo GP).
+- Ver tabla de resultados por cada GP.
 
-Asignar posiciones a pilotos en cada Gran Premio.
-
-Ver tabla de resultados por cada GP.
-
-Controla duplicados (no se repiten pilotos o posiciones en un mismo GP).
-
-Campeonato de Pilotos
-
+ Campeonato de Pilotos
 Calcula los puntos acumulados según las posiciones:
 
-Posición	Puntos
-1	25
-2	18
-3	15
-4	12
-5	10
-6	8
-7	6
-8	4
-9	2
-10	1
+| Posición | Puntos |
+|-----------|---------|
+| 1 | 25 |
+| 2 | 18 |
+| 3 | 15 |
+| 4 | 12 |
+| 5 | 10 |
+| 6 | 8 |
+| 7 | 6 |
+| 8 | 4 |
+| 9 | 2 |
+| 10 | 1 |
 
 Generación de Reportes Excel
+- Exporta datos de escuderías, pilotos, grandes premios, resultados y tabla del campeonato.  
+- Archivo generado automáticamente como **`reportes_f1.xlsx`**.
 
-Exporta datos de escuderías, pilotos, grandes premios, resultados y tabla del campeonato.
+---
 
-Archivo generado automáticamente como reportes_f1.xlsx.
+ Relaciones entre modelos
+
+| Relación | Tipo | Descripción |
+|-----------|------|-------------|
+| Escudería → Pilotos | 1:N | Una escudería puede tener hasta dos pilotos |
+| Piloto ↔ Grandes Premios | N:M | Un piloto puede participar en varios grandes premios |
+| Piloto → PerfilPiloto | 1:1 | Cada piloto tiene un perfil único |
+
+---
+Mapa de Endpoints
+
+ Endpoints de Pilotos
+
+| Método | Endpoint | Descripción | Parámetros | Ejemplo |
+|--------|-----------|-------------|-------------|----------|
+| GET | `/pilotos` | Obtiene todos los pilotos registrados | — | `/pilotos` |
+| GET | `/pilotos/{id}` | Consulta un piloto por su ID | `id: int` | `/pilotos/3` |
+| POST | `/pilotos` | Crea un nuevo piloto | JSON (nombre, nacionalidad, escuderia_id) | — |
+| PUT | `/pilotos/{id}` | Actualiza un piloto completo | `id: int` + JSON | `/pilotos/2` |
+| PATCH | `/pilotos/{id}` | Actualiza parcialmente un piloto | `id: int` | `/pilotos/5` |
+| DELETE | `/pilotos/{id}` | Borrado lógico del piloto | `id: int` | `/pilotos/4` |
+
+ Endpoints de Escuderías
+
+| Método | Endpoint | Descripción | Parámetros | Ejemplo |
+|--------|-----------|-------------|-------------|----------|
+| GET | `/escuderias` | Lista todas las escuderías | — | `/escuderias` |
+| GET | `/escuderias/{id}` | Muestra una escudería con sus pilotos | `id: int` | `/escuderias/1` |
+| POST | `/escuderias` | Crea una nueva escudería | JSON (nombre, país, año_fundación) | — |
+| PUT | `/escuderias/{id}` | Actualiza una escudería | `id: int` + JSON | `/escuderias/2` |
+| PATCH | `/escuderias/{id}` | Actualización parcial | `id: int` | `/escuderias/3` |
+| DELETE | `/escuderias/{id}` | Borrado lógico de la escudería | `id: int` | `/escuderias/1` |
+
+ Endpoints de Grandes Premios
+
+| Método | Endpoint | Descripción | Parámetros | Ejemplo |
+|--------|-----------|-------------|-------------|----------|
+| GET | `/grandes_premios` | Lista todos los grandes premios | — | `/grandes_premios` |
+| GET | `/grandes_premios/{id}` | Muestra información de un GP | `id: int` | `/grandes_premios/5` |
+| POST | `/grandes_premios` | Crea un nuevo GP (fecha obligatoria) | JSON (nombre, país, fecha) | — |
+| PUT | `/grandes_premios/{id}` | Modifica un GP | `id: int` + JSON | `/grandes_premios/2` |
+| DELETE | `/grandes_premios/{id}` | Elimina un GP | `id: int` | `/grandes_premios/3` |
 
 Tecnologías utilizadas
 
@@ -115,12 +160,6 @@ api-f1/
 ├── requirements.txt        # Dependencias del proyecto
 └── reportes_f1.xlsx        # (Se genera automáticamente)
 
-Ejemplo de creación de Gran Premio (JSON)
-{
-  "nombre": "Gran Premio de México",
-  "pais": "México",
-  "fecha": "2025-11-02"
-}
 
 
 Generación de reportes
@@ -142,13 +181,6 @@ Resultados
 
 Campeonato de Pilotos
 
-Autor
-
-Kevin Cuevas
-Estudiante de Ingeniería de Sistemas — Universidad Católica de Colombia
-Materia: Desarrollo de Software
-
-Licencia
 
 Este proyecto fue desarrollado con fines académicos.
 Puedes usarlo y modificarlo libremente para fines educativos o de práctica.
