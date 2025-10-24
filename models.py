@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -33,6 +33,7 @@ class GranPremio(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
     pais = Column(String)
+    fecha = Column(Date, nullable=False)
 
     resultados = relationship("Resultado", back_populates="gran_premio")
 

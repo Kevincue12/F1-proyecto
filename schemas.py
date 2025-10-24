@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-
+from datetime import date
 
 class PilotoBase(BaseModel):
     nombre: str
@@ -18,7 +18,7 @@ class PilotoOut(PilotoBase):
     id: int
 
     class Config:
-        from_attributes = True  # antes orm_mode = True
+        from_attributes = True  
 
 
 class EscuderiaBase(BaseModel):
@@ -42,6 +42,7 @@ class Escuderia(EscuderiaBase):
 class GranPremioBase(BaseModel):
     nombre: str
     pais: str
+    fecha: date
 
 
 class GranPremioCreate(GranPremioBase):

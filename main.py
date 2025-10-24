@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 import crud, models, schemas
 from database import SessionLocal, engine
+from fastapi.responses import FileResponse
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -163,3 +164,8 @@ def campeonato_pilotos(db: Session = Depends(get_db)):
     calculando los puntos acumulados según los resultados registrados.
     """
     return crud.get_campeonato_pilotos(db)
+
+@app.get("/reportes/")
+def generar_reportes_excel(db: Session = Depends(get_db)):
+    mensaje = crud.generar_reportes(db)
+    return FileResponse("reportes_f1.xlsx", filename="reportes_f1.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

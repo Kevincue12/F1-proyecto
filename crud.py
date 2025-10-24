@@ -7,6 +7,7 @@ from schemas import (
     GranPremioCreate,
     ResultadoCreate
 )
+import pandas as pd
 
 
 def get_escuderias(db: Session):
@@ -106,6 +107,8 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate):
 
 
 def create_gran_premio(db: Session, gp: GranPremioCreate):
+    if not gp.fecha:
+        raise HTTPException(status_code=400, detail="La fecha del Gran Premio es obligatoria.")
     nuevo_gp = GranPremio(**gp.dict())
     db.add(nuevo_gp)
     db.commit()
@@ -189,3 +192,72 @@ def get_campeonato_pilotos(db: Session):
         piloto["puesto"] = i
 
     return tabla_ordenada
+
+def generar_reportes(db: Session):
+    """Genera reportes en formato Excel de todas las tablas principales y del campeonato de pilotos."""
+    escuderias = db.query(Escuderia).all()
+    df_escuderias = pd.DataFrame([{
+        "ID": e.id,
+        "Nombre": getattr(e, "nombre", None),
+        "Pais": getattr(e, "pais", None)
+    } for e in escuderias])
+
+    pilotos = db.query(Piloto).all()
+    df_pilotos = pd.DataFrame([{
+        "ID": p.id,
+        "Nombre": getattr(p, "nombre", None),
+        "Número": getattr(p, "numero", None),
+        "Escudería": p.escuderia.nombre if getattr(p, "escuderia", None) else None
+    } for p in pilotos])
+
+    gps = db.query(GranPremio).all()
+    df_gps = pd.DataFrame([{
+        "ID": gp.id,
+        "Nombre": getattr(gp, "nombre", None),
+        "Ubicación": getattr(gp, "ubicacion", getattr(gp, "pais", getattr(gp, "circuito", None))),
+        "Fecha": getattr(gp, "fecha", None)
+    } for gp in gps])
+
+    resultados = db.query(Resultado).all()
+    df_resultados = pd.DataFrame([{
+        "GP": r.gran_premio.nombre if getattr(r, "gran_premio", None) else None,
+        "Piloto": r.piloto.nombre if getattr(r, "piloto", None) else None,
+        "Escudería": r.piloto.escuderia.nombre if getattr(r, "piloto", None) and getattr(r.piloto, "escuderia", None) else None,
+        "Posición": getattr(r, "posicion", None)
+    } for r in resultados])
+
+    puntos_por_posicion = {
+        1: 25, 2: 18, 3: 15, 4: 12, 5: 10,
+        6: 8, 7: 6, 8: 4, 9: 2, 10: 1
+    }
+
+    tabla_campeonato = []
+    for p in pilotos:
+        puntos = sum(puntos_por_posicion.get(r.posicion, 0) for r in getattr(p, "resultados", []))
+        tabla_campeonato.append({
+            "Puesto": None,  
+            "Piloto": getattr(p, "nombre", None),
+            "Número": getattr(p, "numero", None),
+            "Escudería": p.escuderia.nombre if getattr(p, "escuderia", None) else None,
+            "Puntos": puntos
+        })
+
+    tabla_campeonato = sorted(tabla_campeonato, key=lambda x: x["Puntos"], reverse=True)
+    for i, fila in enumerate(tabla_campeonato, start=1):
+        fila["Puesto"] = i
+
+    df_campeonato = pd.DataFrame(tabla_campeonato)
+
+    with pd.ExcelWriter("reportes_f1.xlsx", engine="openpyxl") as writer:
+        if not df_escuderias.empty:
+            df_escuderias.to_excel(writer, sheet_name="Escuderías", index=False)
+        if not df_pilotos.empty:
+            df_pilotos.to_excel(writer, sheet_name="Pilotos", index=False)
+        if not df_gps.empty:
+            df_gps.to_excel(writer, sheet_name="Grandes Premios", index=False)
+        if not df_resultados.empty:
+            df_resultados.to_excel(writer, sheet_name="Resultados", index=False)
+        if not df_campeonato.empty:
+            df_campeonato.to_excel(writer, sheet_name="Campeonato Pilotos", index=False)
+
+    return "Archivo 'reportes_f1.xlsx' generado correctamente con el campeonato incluido."
