@@ -6,8 +6,8 @@ class Escuderia(Base):
     __tablename__ = "escuderias"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, unique=True, index=True)
-    pais = Column(String)
+    nombre = Column(String(100), unique=True, index=True)
+    pais = Column(String(100))
     campeonatos_constructores = Column(Integer, default=0)
 
     pilotos = relationship("Piloto", back_populates="escuderia")
@@ -17,9 +17,9 @@ class Piloto(Base):
     __tablename__ = "pilotos"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True)
+    nombre = Column(String(100), index=True)
     numero = Column(Integer, unique=True, index=True)
-    nacionalidad = Column(String)
+    nacionalidad = Column(String(100))
     campeonatos_pilotos = Column(Integer, default=0)
     escuderia_id = Column(Integer, ForeignKey("escuderias.id"))
 
@@ -31,8 +31,8 @@ class GranPremio(Base):
     __tablename__ = "grandes_premios"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True)
-    pais = Column(String)
+    nombre = Column(String(100), index=True)
+    pais = Column(String(100))
     fecha = Column(Date, nullable=False)
 
     resultados = relationship("Resultado", back_populates="gran_premio")

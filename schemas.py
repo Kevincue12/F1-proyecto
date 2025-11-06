@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import date
 
@@ -33,7 +33,7 @@ class EscuderiaCreate(EscuderiaBase):
 
 class Escuderia(EscuderiaBase):
     id: int
-    pilotos: List["PilotoOut"] = []
+    pilotos: List["PilotoOut"] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

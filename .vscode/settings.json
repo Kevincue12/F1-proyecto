@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "baqvwdbcl0daxl9pcowv-postgresql.services.clever-cloud.com",
+            "port": 7783,
+            "driver": "PostgreSQL",
+            "name": "CleverCloudF1",
+            "database": "baqvwdbcl0daxl9pcowv",
+            "username": "ult5rgyuvz3qyxa9rdlz",
+            "password": "Pngm997JxisgW6l7vBn9"
+        }
+    ]
+}
