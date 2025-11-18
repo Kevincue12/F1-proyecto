@@ -1,7 +1,38 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import date
+from fastapi import Form
 
+
+# ------------- Auth -------------
+class UserBase(BaseModel):
+    username: str
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserOut(UserBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+# Para el dependency del /token (emula OAuth2PasswordRequestForm sin importar python-multipart)
+class LoginForm:
+    def __init__(self, username: str = Form(...), password: str = Form(...)):
+        self.username = username
+        self.password = password
+
+
+# ------------- Dominios F1 -------------
 class PilotoBase(BaseModel):
     nombre: str
     numero: int
@@ -18,7 +49,7 @@ class PilotoOut(PilotoBase):
     id: int
 
     class Config:
-        from_attributes = True  
+        from_attributes = True
 
 
 class EscuderiaBase(BaseModel):
@@ -31,7 +62,7 @@ class EscuderiaCreate(EscuderiaBase):
     pass
 
 
-class Escuderia(EscuderiaBase):
+class EscuderiaOut(EscuderiaBase):
     id: int
     pilotos: List["PilotoOut"] = Field(default_factory=list)
 
@@ -72,3 +103,18 @@ class ResultadoOut(ResultadoBase):
 
     class Config:
         from_attributes = True
+
+
+class ResultadoTabla(BaseModel):
+    posicion: int
+    piloto: str
+    numero: int
+    escuderia: Optional[str]
+
+
+class CampeonatoFila(BaseModel):
+    puesto: int
+    piloto: str
+    numero: int
+    escuderia: Optional[str]
+    puntos: int

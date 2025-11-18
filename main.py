@@ -1,12 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-import crud, models, schemas
-from database import SessionLocal, engine
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+from typing import List
+
+import models, schemas, crud, crud_usuarios
+from database import SessionLocal, engine
+from auth import get_current_user, oauth2_scheme, authenticate_and_create_token
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="API F1 - Pilotos, Escuderías y Grandes Premios")
+app = FastAPI(title="API F1 - Pilotos, Escuderías y Grandes Premios (con usuarios)")
 
 
 def get_db():
@@ -17,132 +20,159 @@ def get_db():
         db.close()
 
 
-@app.post("/escuderias/", response_model=schemas.Escuderia)
-def crear_escuderia(escuderia: schemas.EscuderiaCreate, db: Session = Depends(get_db)):
-    return crud.create_escuderia(db, escuderia)
+# ---------- Autenticación y registro ----------
+@app.post("/users/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
+def register_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
+    user = crud_usuarios.get_user_by_username(db, user_in.username)
+    if user:
+        raise HTTPException(status_code=400, detail="El nombre de usuario ya existe.")
+    return crud_usuarios.create_user(db, user_in)
 
 
-@app.get("/escuderias/", response_model=list[schemas.Escuderia])
-def listar_escuderias(db: Session = Depends(get_db)):
-    return crud.get_escuderias(db)
+@app.post("/token", response_model=schemas.Token)
+def login_for_access_token(form_data: schemas.LoginForm = Depends(), db: Session = Depends(get_db)):
+    """
+    Endpoint OAuth2 para obtener JWT.
+    """
+    token = authenticate_and_create_token(db, form_data.username, form_data.password)
+    if not token:
+        raise HTTPException(status_code=400, detail="Usuario o contraseña inválidos.")
+    return token
 
 
-@app.put("/escuderias/{escuderia_id}", response_model=schemas.Escuderia)
-def editar_escuderia(escuderia_id: int, escuderia: schemas.EscuderiaCreate, db: Session = Depends(get_db)):
-    result = crud.update_escuderia(db, escuderia_id, escuderia)
+# ---------- Escuderías ----------
+@app.post("/escuderias/", response_model=schemas.EscuderiaOut)
+def crear_escuderia(
+    escuderia: schemas.EscuderiaCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.create_escuderia(db, escuderia, owner_id=current_user.id)
+
+
+@app.get("/escuderias/", response_model=List[schemas.EscuderiaOut])
+def listar_escuderias(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.get_escuderias(db, owner_id=current_user.id)
+
+
+@app.put("/escuderias/{escuderia_id}", response_model=schemas.EscuderiaOut)
+def editar_escuderia(
+    escuderia_id: int,
+    escuderia: schemas.EscuderiaCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    result = crud.update_escuderia(db, escuderia_id, escuderia, owner_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Escudería no encontrada")
     return result
 
 
 @app.delete("/escuderias/{escuderia_id}")
-def eliminar_escuderia(escuderia_id: int, db: Session = Depends(get_db)):
-    result = crud.delete_escuderia(db, escuderia_id)
+def eliminar_escuderia(
+    escuderia_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    result = crud.delete_escuderia(db, escuderia_id, owner_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Escudería no encontrada")
     return {"mensaje": "Escudería eliminada correctamente"}
 
 
+# ---------- Pilotos ----------
 @app.post("/pilotos/", response_model=schemas.PilotoOut)
-def crear_piloto(piloto: schemas.PilotoCreate, db: Session = Depends(get_db)):
-
-    if not piloto.escuderia_id:
-        raise HTTPException(status_code=400, detail="Debe seleccionar una escudería válida.")
-
-    escuderia = db.query(models.Escuderia).filter(models.Escuderia.id == piloto.escuderia_id).first()
-    if not escuderia:
-        raise HTTPException(status_code=404, detail="La escudería seleccionada no existe.")
-
-    piloto_existente = db.query(models.Piloto).filter(models.Piloto.numero == piloto.numero).first()
-    if piloto_existente:
-        raise HTTPException(status_code=400, detail=f"Ya existe un piloto con el número {piloto.numero}.")
-
-    if len(escuderia.pilotos) >= 2:
-        raise HTTPException(status_code=400, detail="La escudería ya tiene 2 pilotos registrados.")
-
-    return crud.create_piloto(db, piloto)
+def crear_piloto(
+    piloto: schemas.PilotoCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.create_piloto(db, piloto, owner_id=current_user.id)
 
 
-@app.get("/pilotos/", response_model=list[schemas.PilotoOut])
-def listar_pilotos(db: Session = Depends(get_db)):
-    return crud.get_pilotos(db)
+@app.get("/pilotos/", response_model=List[schemas.PilotoOut])
+def listar_pilotos(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.get_pilotos(db, owner_id=current_user.id)
 
 
 @app.get("/pilotos/numero/{numero}", response_model=schemas.PilotoOut)
-def buscar_por_numero(numero: int, db: Session = Depends(get_db)):
-    piloto = crud.get_piloto_por_numero(db, numero)
+def buscar_por_numero(
+    numero: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    piloto = crud.get_piloto_por_numero(db, numero, owner_id=current_user.id)
     if not piloto:
         raise HTTPException(status_code=404, detail="Piloto no encontrado")
     return piloto
 
 
 @app.put("/pilotos/{piloto_id}", response_model=schemas.PilotoOut)
-def editar_piloto(piloto_id: int, piloto: schemas.PilotoCreate, db: Session = Depends(get_db)):
-
-    piloto_existente = db.query(models.Piloto).filter(models.Piloto.id == piloto_id).first()
-    if not piloto_existente:
-        raise HTTPException(status_code=404, detail="El piloto no existe.")
-
-    if not piloto.escuderia_id:
-        raise HTTPException(status_code=400, detail="Debe seleccionar una escudería válida para el piloto.")
-
-    escuderia = db.query(models.Escuderia).filter(models.Escuderia.id == piloto.escuderia_id).first()
-    if not escuderia:
-        raise HTTPException(status_code=404, detail="La escudería seleccionada no existe.")
-
-    pilotos_escuderia = [p for p in escuderia.pilotos if p.id != piloto_id]
-    if len(pilotos_escuderia) >= 2:
-        raise HTTPException(status_code=400, detail="La escudería ya tiene 2 pilotos registrados.")
-
-    result = crud.update_piloto(db, piloto_id, piloto)
+def editar_piloto(
+    piloto_id: int,
+    piloto: schemas.PilotoCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    result = crud.update_piloto(db, piloto_id, piloto, owner_id=current_user.id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Piloto no encontrado")
     return result
 
 
 @app.delete("/pilotos/{piloto_id}")
-def eliminar_piloto(piloto_id: int, db: Session = Depends(get_db)):
-    result = crud.delete_piloto(db, piloto_id)
+def eliminar_piloto(
+    piloto_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    result = crud.delete_piloto(db, piloto_id, owner_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Piloto no encontrado")
     return {"mensaje": "Piloto eliminado correctamente"}
 
 
+# ---------- Grandes Premios ----------
 @app.post("/grandes_premios/", response_model=schemas.GranPremioOut)
-def crear_gran_premio(gp: schemas.GranPremioCreate, db: Session = Depends(get_db)):
-    return crud.create_gran_premio(db, gp)
+def crear_gran_premio(
+    gp: schemas.GranPremioCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.create_gran_premio(db, gp, owner_id=current_user.id)
 
 
-@app.get("/grandes_premios/", response_model=list[schemas.GranPremioOut])
-def listar_grandes_premios(db: Session = Depends(get_db)):
-    return crud.get_grandes_premios(db)
+@app.get("/grandes_premios/", response_model=List[schemas.GranPremioOut])
+def listar_grandes_premios(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.get_grandes_premios(db, owner_id=current_user.id)
 
 
+# ---------- Resultados ----------
 @app.post("/resultados/", response_model=schemas.ResultadoOut)
-def agregar_resultado(resultado: schemas.ResultadoCreate, db: Session = Depends(get_db)):
-
-    piloto = db.query(models.Piloto).filter(models.Piloto.numero == resultado.piloto_numero).first()
-    gp = db.query(models.GranPremio).filter(models.GranPremio.id == resultado.gran_premio_id).first()
-
-    if not piloto:
-        raise HTTPException(status_code=404, detail="Piloto no encontrado.")
-    if not gp:
-        raise HTTPException(status_code=404, detail="Gran Premio no encontrado.")
-
-    resultado_existente = db.query(models.Resultado).filter(
-        models.Resultado.gran_premio_id == resultado.gran_premio_id,
-        models.Resultado.posicion == resultado.posicion
-    ).first()
-    if resultado_existente:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Ya hay un piloto registrado en la posición {resultado.posicion} para este GP."
-        )
-
-    return crud.create_resultado(db, resultado)
+def agregar_resultado(
+    resultado: schemas.ResultadoCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.create_resultado(db, resultado, owner_id=current_user.id)
 
 
-@app.get("/resultados/gp/{gp_id}")
-def listar_resultados_gp(gp_id: int, db: Session = Depends(get_db)):
-    resultados = crud.get_resultados_por_gp(db, gp_id)
+@app.get("/resultados/gp/{gp_id}", response_model=List[schemas.ResultadoTabla])
+def listar_resultados_gp(
+    gp_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    resultados = crud.get_resultados_por_gp(db, gp_id, owner_id=current_user.id)
     if not resultados:
         raise HTTPException(status_code=404, detail="No hay resultados para este Gran Premio")
     tabla = [
@@ -150,22 +180,29 @@ def listar_resultados_gp(gp_id: int, db: Session = Depends(get_db)):
             "posicion": r.posicion,
             "piloto": r.piloto.nombre,
             "numero": r.piloto.numero,
-            "escuderia": r.piloto.escuderia.nombre if r.piloto.escuderia else None
+            "escuderia": r.piloto.escuderia.nombre if r.piloto.escuderia else None,
         }
         for r in resultados
     ]
     return sorted(tabla, key=lambda x: x["posicion"])
 
 
-@app.get("/campeonato/pilotos")
-def campeonato_pilotos(db: Session = Depends(get_db)):
-    """
-    Devuelve la tabla de posiciones del campeonato de pilotos,
-    calculando los puntos acumulados según los resultados registrados.
-    """
-    return crud.get_campeonato_pilotos(db)
+@app.get("/campeonato/pilotos", response_model=List[schemas.CampeonatoFila])
+def campeonato_pilotos(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.get_campeonato_pilotos(db, owner_id=current_user.id)
+
 
 @app.get("/reportes/")
-def generar_reportes_excel(db: Session = Depends(get_db)):
-    mensaje = crud.generar_reportes(db)
-    return FileResponse("reportes_f1.xlsx", filename="reportes_f1.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+def generar_reportes_excel(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    mensaje = crud.generar_reportes(db, owner_id=current_user.id)
+    return FileResponse(
+        "reportes_f1.xlsx",
+        filename="reportes_f1.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
