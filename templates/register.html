@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - F1 Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+
+        body {
+            margin: 0;
+            font-family: "Montserrat", sans-serif;
+            background: url('/static/img/f1-banner.jpg') no-repeat center center/cover;
+            height: 100vh;
+            backdrop-filter: blur(3px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            width: 400px;
+            background: rgba(0,0,0,0.78);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.45);
+            animation: fadeIn 0.9s ease;
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            background: #222;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .btn {
+            width: 95%;
+            padding: 12px;
+            background: #e10600;
+            border: none;
+            color: white;
+            margin-top: 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .3s;
+        }
+
+        .btn:hover {
+            background: #ff2e25;
+            box-shadow: 0 0 20px rgba(255,0,0,0.7);
+        }
+
+        a {
+            margin-top: 15px;
+            display: block;
+            color: #ccc;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: white;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Crear Cuenta</h2>
+
+        <form action="/form_register" method="post">
+            <input type="text" name="username" placeholder="Usuario" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+
+            <button class="btn">Registrarse</button>
+        </form>
+
+        <a href="/login">¿Ya tienes cuenta? Inicia sesión</a>
+    </div>
+
+</body>
+</html>

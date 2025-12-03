@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pilotos</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>Gestión de Pilotos</h1>
+<p>Usuario: {{ user.username }}</p>
+
+<a href="/dashboard">⬅ Volver al Dashboard</a>
+<hr>
+
+<h2>Crear Piloto</h2>
+<form action="/pilotos/" method="post" enctype="multipart/form-data">
+
+    <label>Nombre:</label>
+    <input type="text" name="nombre" required><br>
+
+    <label>Número:</label>
+    <input type="number" name="numero" required><br>
+
+    <label>Nacionalidad:</label>
+    <input type="text" name="nacionalidad" required><br>
+
+    <label>Campeonatos pilotos:</label>
+    <input type="number" name="campeonatos_pilotos" value="0"><br>
+
+    <label>Escudería:</label>
+    <select name="escuderia_id" required>
+        <option value="">Seleccione una escudería</option>
+        {% for esc in escuderias %}
+            <option value="{{ esc.id }}">{{ esc.nombre }}</option>
+        {% endfor %}
+    </select><br>
+
+    <label>Foto:</label>
+    <input type="file" name="foto"><br><br>
+
+    <button type="submit">Crear Piloto</button>
+</form>
+
+<hr>
+<h2>Mis Pilotos</h2>
+
+{% if pilotos %}
+<table border="1" cellpadding="8">
+    <tr>
+        <th>Foto</th>
+        <th>Nombre</th>
+        <th>Número</th>
+        <th>Nacionalidad</th>
+        <th>Escudería</th>
+    </tr>
+
+    {% for p in pilotos %}
+    <tr>
+        <td>
+            {% if p.foto %}
+                <img src="{{ p.foto }}" width="80">
+            {% else %}
+                Sin foto
+            {% endif %}
+        </td>
+
+        <td>{{ p.nombre }}</td>
+        <td>#{{ p.numero }}</td>
+        <td>{{ p.nacionalidad }}</td>
+        <td>{{ p.escuderia }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% else %}
+<p>No tienes pilotos creados.</p>
+{% endif %}
+
+</body>
+</html>

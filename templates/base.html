@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: white;
+            font-family: "Montserrat", sans-serif;
+        }
+
+        .topbar {
+            background: #111;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ff1e1e;
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #ff1e1e;
+            font-weight: 900;
+        }
+
+        .topbar a {
+            color: white;
+            margin-left: 20px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .topbar a:hover {
+            color: #ff1e1e;
+        }
+
+        .main {
+            padding: 25px;
+            width: 90%;
+            margin: auto;
+        }
+
+        /* Botón general */
+        .btn-f1 {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 10px;
+            background: #ff1e1e;
+            color: white;
+            text-decoration: none;
+            transition: .3s;
+            font-weight: bold;
+        }
+
+        .btn-f1:hover {
+            background: #d11b1b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra superior -->
+    <div class="topbar">
+        <h1>F1 MANAGER</h1>
+
+        <div>
+            <a href="/dashboard">🏁 Inicio</a>
+            <a href="/crear-escuderia">🚗 Escuderías</a>
+            <a href="/crear-piloto">👤 Pilotos</a>
+            <a href="/crear-gp">🌍 Grandes Premios</a>
+            <a href="/logout">⏻ Salir</a>
+        </div>
+    </div>
+
+    <div class="main">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</body>
+</html>

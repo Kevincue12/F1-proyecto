@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Gran Premio</title>
+    <link rel="stylesheet" href="/static/form.css">
+</head>
+<body>
+
+<div class="container">
+    <a href="/dashboard" class="back">← Volver</a>
+
+    <h1>Crear Gran Premio</h1>
+
+    <form action="/crear_gran_premio" method="post" class="card">
+
+        <label>Nombre del Gran Premio</label>
+        <input type="text" name="nombre" placeholder="Ej: Gran Premio de Bahréin" required>
+
+        <label>País</label>
+        <input type="text" name="pais" placeholder="Ej: Bahréin" required>
+
+        <label>Circuito</label>
+        <input type="text" name="circuito" placeholder="Ej: Sakhir" required>
+
+        <label>Fecha</label>
+        <input type="date" name="fecha" required>
+
+        <button class="btn">Guardar Gran Premio</button>
+    </form>
+</div>
+
+</body>
+</html>
