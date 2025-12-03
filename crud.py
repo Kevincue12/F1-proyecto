@@ -21,7 +21,6 @@ def get_escuderia(db: Session, escuderia_id: int, owner_id: int):
 
 
 def create_escuderia(db: Session, escuderia: EscuderiaCreate, owner_id: int):
-    # nombre único por usuario
     existente = (
         db.query(Escuderia)
         .filter(Escuderia.owner_id == owner_id, Escuderia.nombre == escuderia.nombre)
@@ -51,7 +50,6 @@ def update_escuderia(db: Session, escuderia_id: int, escuderia_data: EscuderiaCr
     if not esc:
         return None
 
-    # Evitar duplicado de nombre en el mismo usuario
     if escuderia_data.nombre != esc.nombre:
         dup = (
             db.query(Escuderia)
@@ -63,6 +61,7 @@ def update_escuderia(db: Session, escuderia_id: int, escuderia_data: EscuderiaCr
 
     for key, value in escuderia_data.dict().items():
         setattr(esc, key, value)
+
     db.commit()
     db.refresh(esc)
     return esc
@@ -94,7 +93,7 @@ def create_piloto(db: Session, piloto: PilotoCreate, owner_id: int):
         raise HTTPException(status_code=404, detail="La escudería seleccionada no existe.")
 
     if len(escuderia.pilotos) >= 2:
-        raise HTTPException(status_code=400, detail=f"La escudería '{escuderia.nombre}' ya tiene 2 pilotos registrados.")
+        raise HTTPException(status_code=400, detail=f"La escudería '{escuderia.nombre}' ya tiene 2 pilotos.")
 
     piloto_existente = (
         db.query(Piloto)
@@ -135,9 +134,8 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_
 
     pilotos_escuderia = [p for p in escuderia.pilotos if p.id != piloto_id]
     if len(pilotos_escuderia) >= 2:
-        raise HTTPException(status_code=400, detail="La escudería ya tiene 2 pilotos registrados.")
+        raise HTTPException(status_code=400, detail="La escudería ya tiene 2 pilotos.")
 
-    # Evitar duplicado de número dentro del mismo usuario
     if piloto.numero != piloto_data.numero:
         dup = (
             db.query(Piloto)
@@ -149,6 +147,7 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_
 
     for key, value in piloto_data.dict().items():
         setattr(piloto, key, value)
+
     db.commit()
     db.refresh(piloto)
     return piloto
@@ -157,16 +156,15 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_
 # ---------------- GRANDES PREMIOS ----------------
 def create_gran_premio(db: Session, gp: GranPremioCreate, owner_id: int):
     if not gp.fecha:
-        raise HTTPException(status_code=400, detail="La fecha del Gran Premio es obligatoria.")
+        raise HTTPException(status_code=400, detail="La fecha es obligatoria.")
 
-    # Nombre de GP único por usuario (opcional)
     existente = (
         db.query(GranPremio)
         .filter(GranPremio.owner_id == owner_id, GranPremio.nombre == gp.nombre)
         .first()
     )
     if existente:
-        raise HTTPException(status_code=400, detail="Ya tienes un Gran Premio con ese nombre.")
+        raise HTTPException(status_code=400, detail="Ya tienes un GP con ese nombre.")
 
     nuevo_gp = GranPremio(owner_id=owner_id, **gp.dict())
     db.add(nuevo_gp)
@@ -182,7 +180,7 @@ def get_grandes_premios(db: Session, owner_id: int):
 # ---------------- RESULTADOS ----------------
 def create_resultado(db: Session, resultado: ResultadoCreate, owner_id: int):
     if not resultado.posicion or not resultado.gran_premio_id or not resultado.piloto_numero:
-        raise HTTPException(status_code=400, detail="Todos los campos (posición, piloto y Gran Premio) son obligatorios.")
+        raise HTTPException(status_code=400, detail="Todos los campos son obligatorios.")
 
     piloto = (
         db.query(Piloto)
@@ -206,7 +204,7 @@ def create_resultado(db: Session, resultado: ResultadoCreate, owner_id: int):
         .first()
     )
     if existente:
-        raise HTTPException(status_code=400, detail="El piloto ya tiene un resultado en este GP.")
+        raise HTTPException(status_code=400, detail="El piloto ya tiene resultado en este GP.")
 
     posicion_ocupada = (
         db.query(Resultado)
@@ -214,7 +212,7 @@ def create_resultado(db: Session, resultado: ResultadoCreate, owner_id: int):
         .first()
     )
     if posicion_ocupada:
-        raise HTTPException(status_code=400, detail=f"La posición {resultado.posicion} ya está ocupada en este GP.")
+        raise HTTPException(status_code=400, detail=f"La posición {resultado.posicion} ya está ocupada.")
 
     nuevo_res = Resultado(
         owner_id=owner_id,
@@ -236,6 +234,7 @@ def get_resultados_por_gp(db: Session, gp_id: int, owner_id: int):
     )
 
 
+# ---------------- CAMPEONATO ----------------
 def get_campeonato_pilotos(db: Session, owner_id: int):
     puntos_por_posicion = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
 
@@ -247,6 +246,7 @@ def get_campeonato_pilotos(db: Session, owner_id: int):
         for r in p.resultados:
             if r.owner_id == owner_id:
                 puntos += puntos_por_posicion.get(r.posicion, 0)
+
         tabla.append(
             {
                 "piloto": p.nombre,
@@ -257,11 +257,14 @@ def get_campeonato_pilotos(db: Session, owner_id: int):
         )
 
     tabla_ordenada = sorted(tabla, key=lambda x: x["puntos"], reverse=True)
+
     for i, fila in enumerate(tabla_ordenada, start=1):
         fila["puesto"] = i
+
     return tabla_ordenada
 
 
+# ---------------- REPORTES ----------------
 def generar_reportes(db: Session, owner_id: int):
     escuderias = db.query(Escuderia).filter(Escuderia.owner_id == owner_id).all()
     df_escuderias = pd.DataFrame(
@@ -299,7 +302,7 @@ def generar_reportes(db: Session, owner_id: int):
         ]
     )
 
-    # Campeonato
+    # Tabla campeonato
     puntos_por_posicion = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
     tabla_campeonato = []
     for p in pilotos:
@@ -313,9 +316,11 @@ def generar_reportes(db: Session, owner_id: int):
                 "Puntos": puntos,
             }
         )
+
     tabla_campeonato = sorted(tabla_campeonato, key=lambda x: x["Puntos"], reverse=True)
     for i, fila in enumerate(tabla_campeonato, start=1):
         fila["Puesto"] = i
+
     df_campeonato = pd.DataFrame(tabla_campeonato)
 
     with pd.ExcelWriter("reportes_f1.xlsx", engine="openpyxl") as writer:
@@ -331,3 +336,4 @@ def generar_reportes(db: Session, owner_id: int):
             df_campeonato.to_excel(writer, sheet_name="Campeonato Pilotos", index=False)
 
     return "Archivo 'reportes_f1.xlsx' generado correctamente con el campeonato incluido."
+

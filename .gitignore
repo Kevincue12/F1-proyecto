@@ -21,3 +21,7 @@ Thumbs.db
 
 *.xlsx
 *.xls
+
+*
+!*/   # permitir carpetas
+

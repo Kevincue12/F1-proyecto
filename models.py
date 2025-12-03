@@ -21,11 +21,14 @@ class Escuderia(Base):
     __tablename__ = "escuderias"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), index=True)  # no global unique => unicidad por usuario en CRUD
+    nombre = Column(String(100), index=True)
     pais = Column(String(100))
     campeonatos_constructores = Column(Integer, default=0)
 
-    owner_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    # CAMPO DE FOTO CORREGIDO:
+    logo = Column(String(255), nullable=True)   # ← DEBE COINCIDIR CON EL main.py
+
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="escuderias")
 
     pilotos = relationship("Piloto", back_populates="escuderia", cascade="all, delete")
@@ -36,12 +39,15 @@ class Piloto(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), index=True)
-    numero = Column(Integer, index=True)  # no global unique => unicidad por usuario en CRUD
+    numero = Column(Integer, index=True)
     nacionalidad = Column(String(100))
     campeonatos_pilotos = Column(Integer, default=0)
-    escuderia_id = Column(Integer, ForeignKey("escuderias.id"))
 
-    owner_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    escuderia_id = Column(Integer, ForeignKey("escuderias.id", ondelete="CASCADE"))
+
+    foto = Column(String(255), nullable=True)  # ← CORRECTO, COINCIDE CON main.py
+
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="pilotos")
 
     escuderia = relationship("Escuderia", back_populates="pilotos")
@@ -56,7 +62,7 @@ class GranPremio(Base):
     pais = Column(String(100))
     fecha = Column(Date, nullable=False)
 
-    owner_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="grandes_premios")
 
     resultados = relationship("Resultado", back_populates="gran_premio", cascade="all, delete")
@@ -66,11 +72,11 @@ class Resultado(Base):
     __tablename__ = "resultados"
 
     id = Column(Integer, primary_key=True, index=True)
-    piloto_id = Column(Integer, ForeignKey("pilotos.id"))
-    gran_premio_id = Column(Integer, ForeignKey("grandes_premios.id"))
+    piloto_id = Column(Integer, ForeignKey("pilotos.id", ondelete="CASCADE"))
+    gran_premio_id = Column(Integer, ForeignKey("grandes_premios.id", ondelete="CASCADE"))
     posicion = Column(Integer)
 
-    owner_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="resultados")
 
     piloto = relationship("Piloto", back_populates="resultados")

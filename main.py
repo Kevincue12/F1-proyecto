@@ -1,16 +1,33 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List
+import shutil
+import uuid
+import os
 
 import models, schemas, crud, crud_usuarios
 from database import SessionLocal, engine
-from auth import get_current_user, oauth2_scheme, authenticate_and_create_token
+from auth import get_current_user, authenticate_and_create_token
 
-models.Base.metadata.create_all(bind=engine)
-
+# ----------------------------------------------------
+# APP
+# ----------------------------------------------------
 app = FastAPI(title="API F1 - Pilotos, Escuderías y Grandes Premios (con usuarios)")
 
+# ----------------------------------------------------
+# ARCHIVOS ESTÁTICOS
+# ----------------------------------------------------
+if not os.path.exists("static/uploads"):
+    os.makedirs("static/uploads")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# ----------------------------------------------------
+# DATABASE
+# ----------------------------------------------------
+models.Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
@@ -19,8 +36,9 @@ def get_db():
     finally:
         db.close()
 
-
-# ---------- Autenticación y registro ----------
+# ----------------------------------------------------
+# USUARIOS (AUTH)
+# ----------------------------------------------------
 @app.post("/users/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def register_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     user = crud_usuarios.get_user_by_username(db, user_in.username)
@@ -31,23 +49,41 @@ def register_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/token", response_model=schemas.Token)
 def login_for_access_token(form_data: schemas.LoginForm = Depends(), db: Session = Depends(get_db)):
-    """
-    Endpoint OAuth2 para obtener JWT.
-    """
     token = authenticate_and_create_token(db, form_data.username, form_data.password)
     if not token:
         raise HTTPException(status_code=400, detail="Usuario o contraseña inválidos.")
     return token
 
 
-# ---------- Escuderías ----------
+# ====================================================
+# ESCUDERÍAS (CON FOTO)
+# ====================================================
 @app.post("/escuderias/", response_model=schemas.EscuderiaOut)
-def crear_escuderia(
-    escuderia: schemas.EscuderiaCreate,
+async def crear_escuderia(
+    nombre: str = Form(...),
+    pais: str = Form(...),
+    campeonatos_constructores: int = Form(...),
+    foto: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return crud.create_escuderia(db, escuderia, owner_id=current_user.id)
+    ruta_foto = None
+
+    if foto:
+        nombre_unico = f"{uuid.uuid4()}_{foto.filename}"
+        ruta_foto = f"static/uploads/{nombre_unico}"
+
+        with open(ruta_foto, "wb") as buffer:
+            shutil.copyfileobj(foto.file, buffer)
+
+    escuderia_data = schemas.EscuderiaCreate(
+        nombre=nombre,
+        pais=pais,
+        campeonatos_constructores=campeonatos_constructores,
+        foto=ruta_foto,
+    )
+
+    return crud.create_escuderia(db, escuderia_data, owner_id=current_user.id)
 
 
 @app.get("/escuderias/", response_model=List[schemas.EscuderiaOut])
@@ -58,6 +94,64 @@ def listar_escuderias(
     return crud.get_escuderias(db, owner_id=current_user.id)
 
 
+# ====================================================
+# PILOTOS (CON FOTO)
+# ====================================================
+@app.post("/pilotos/", response_model=schemas.PilotoOut)
+async def crear_piloto(
+    nombre: str = Form(...),
+    numero: int = Form(...),
+    nacionalidad: str = Form(...),
+    campeonatos_pilotos: int = Form(...),
+    escuderia_id: int = Form(...),
+    foto: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    ruta_foto = None
+
+    if foto:
+        nombre_unico = f"{uuid.uuid4()}_{foto.filename}"
+        ruta_foto = f"static/uploads/{nombre_unico}"
+
+        with open(ruta_foto, "wb") as buffer:
+            shutil.copyfileobj(foto.file, buffer)
+
+    piloto_data = schemas.PilotoCreate(
+        nombre=nombre,
+        numero=numero,
+        nacionalidad=nacionalidad,
+        campeonatos_pilotos=campeonatos_pilotos,
+        escuderia_id=escuderia_id,
+        foto=ruta_foto
+    )
+
+    return crud.create_piloto(db, piloto_data, owner_id=current_user.id)
+
+
+@app.get("/pilotos/", response_model=List[schemas.PilotoOut])
+def listar_pilotos(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return crud.get_pilotos(db, owner_id=current_user.id)
+
+
+@app.get("/pilotos/numero/{numero}", response_model=schemas.PilotoOut)
+def buscar_por_numero(
+    numero: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    piloto = crud.get_piloto_por_numero(db, numero, owner_id=current_user.id)
+    if not piloto:
+        raise HTTPException(status_code=404, detail="Piloto no encontrado")
+    return piloto
+
+
+# ====================================================
+# CRUD ESCUDERÍAS Y PILOTOS
+# ====================================================
 @app.put("/escuderias/{escuderia_id}", response_model=schemas.EscuderiaOut)
 def editar_escuderia(
     escuderia_id: int,
@@ -81,36 +175,6 @@ def eliminar_escuderia(
     if not result:
         raise HTTPException(status_code=404, detail="Escudería no encontrada")
     return {"mensaje": "Escudería eliminada correctamente"}
-
-
-# ---------- Pilotos ----------
-@app.post("/pilotos/", response_model=schemas.PilotoOut)
-def crear_piloto(
-    piloto: schemas.PilotoCreate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    return crud.create_piloto(db, piloto, owner_id=current_user.id)
-
-
-@app.get("/pilotos/", response_model=List[schemas.PilotoOut])
-def listar_pilotos(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    return crud.get_pilotos(db, owner_id=current_user.id)
-
-
-@app.get("/pilotos/numero/{numero}", response_model=schemas.PilotoOut)
-def buscar_por_numero(
-    numero: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    piloto = crud.get_piloto_por_numero(db, numero, owner_id=current_user.id)
-    if not piloto:
-        raise HTTPException(status_code=404, detail="Piloto no encontrado")
-    return piloto
 
 
 @app.put("/pilotos/{piloto_id}", response_model=schemas.PilotoOut)
@@ -138,7 +202,9 @@ def eliminar_piloto(
     return {"mensaje": "Piloto eliminado correctamente"}
 
 
-# ---------- Grandes Premios ----------
+# ====================================================
+# GRANDES PREMIOS
+# ====================================================
 @app.post("/grandes_premios/", response_model=schemas.GranPremioOut)
 def crear_gran_premio(
     gp: schemas.GranPremioCreate,
@@ -156,7 +222,9 @@ def listar_grandes_premios(
     return crud.get_grandes_premios(db, owner_id=current_user.id)
 
 
-# ---------- Resultados ----------
+# ====================================================
+# RESULTADOS
+# ====================================================
 @app.post("/resultados/", response_model=schemas.ResultadoOut)
 def agregar_resultado(
     resultado: schemas.ResultadoCreate,
@@ -175,6 +243,7 @@ def listar_resultados_gp(
     resultados = crud.get_resultados_por_gp(db, gp_id, owner_id=current_user.id)
     if not resultados:
         raise HTTPException(status_code=404, detail="No hay resultados para este Gran Premio")
+
     tabla = [
         {
             "posicion": r.posicion,
@@ -184,6 +253,7 @@ def listar_resultados_gp(
         }
         for r in resultados
     ]
+
     return sorted(tabla, key=lambda x: x["posicion"])
 
 
@@ -195,12 +265,15 @@ def campeonato_pilotos(
     return crud.get_campeonato_pilotos(db, owner_id=current_user.id)
 
 
+# ====================================================
+# REPORTES EXCEL
+# ====================================================
 @app.get("/reportes/")
 def generar_reportes_excel(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    mensaje = crud.generar_reportes(db, owner_id=current_user.id)
+    crud.generar_reportes(db, owner_id=current_user.id)
     return FileResponse(
         "reportes_f1.xlsx",
         filename="reportes_f1.xlsx",
