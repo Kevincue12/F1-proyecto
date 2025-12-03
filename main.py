@@ -201,8 +201,11 @@ async def editar_escuderia(
     if not esc:
         raise HTTPException(404, "Escudería no encontrada")
 
+    # --- conservar foto actual ---
     ruta = esc.foto
-    if foto:
+
+    # --- SOLO si realmente subió foto nueva ---
+    if foto and foto.filename and foto.filename.strip():
         nombre_unico = f"{uuid.uuid4()}_{foto.filename}"
         ruta = f"static/uploads/escuderias/{nombre_unico}"
         with open(ruta, "wb") as buffer:
@@ -218,7 +221,6 @@ async def editar_escuderia(
     crud.update_escuderia(db, id, data, owner_id=current_user.id)
 
     return RedirectResponse("/escuderias_page", status_code=303)
-
 
 @app.post("/escuderias/{id}/eliminar")
 def eliminar_escuderia(
