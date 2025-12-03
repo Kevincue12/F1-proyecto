@@ -1,82 +1,254 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Pilotos</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pilotos - F1 Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#09090b;
+      --card:#111113;
+      --muted:#9aa0a6;
+      --accent:#e10600;
+      --glass: rgba(255,255,255,0.03);
+      --hover: rgba(255,255,255,0.06);
+    }
+
+    *{box-sizing:border-box;font-family:"Montserrat",sans-serif;}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#050505 0%, #0b0b0c 100%);
+      color:#eee;
+      overflow-x:hidden;
+    }
+
+    .wrap{display:flex;min-height:100vh;}
+
+    .sidebar{
+      width:260px;
+      background:linear-gradient(180deg,#0f0f10, #0b0b0c);
+      padding:28px 20px;
+      border-right:1px solid rgba(255,255,255,0.05);
+      position:sticky;top:0;height:100vh;
+    }
+
+    .logo{
+      display:flex;align-items:center;gap:12px;margin-bottom:28px;
+    }
+    .logo .dot{
+      width:44px;height:44px;border-radius:10px;background:var(--accent);
+      box-shadow:0 6px 20px rgba(225,6,0,0.25);
+    }
+    .logo h2{margin:0;font-size:1.1rem;font-weight:900;}
+
+    .user{
+      margin-top:18px;padding:14px;border-radius:12px;background:var(--glass);
+      display:flex;gap:12px;align-items:center;
+    }
+    .user img{
+      width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);
+    }
+    nav{margin-top:26px;}
+    nav a{
+      display:block;padding:12px;border-radius:10px;
+      color:#cfcfcf;text-decoration:none;margin-bottom:6px;
+      transition:0.2s;
+    }
+    nav a:hover{
+      background:var(--hover);
+      color:#fff;
+    }
+
+    .mutebtn{
+      margin-top:20px;background:transparent;border:1px solid rgba(255,255,255,0.15);
+      color:#ddd;padding:8px 10px;border-radius:8px;width:100%;cursor:pointer;
+      transition:0.2s;
+    }
+    .mutebtn:hover{background:var(--hover);}
+
+    .main{flex:1;padding:30px;}
+
+    .header{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;
+    }
+
+    .btn{
+      background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;
+      border:0;cursor:pointer;font-weight:700;transition:0.2s;box-shadow:0 4px 14px rgba(225,6,0,0.35);
+    }
+    .btn:hover{transform:scale(1.04);}
+
+    .panel{
+      background:var(--card);padding:18px;border-radius:14px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.45);
+      margin-bottom:20px;
+    }
+
+    table{width:100%;border-collapse:collapse;color:#ddd;font-size:0.95rem;}
+    th,td{
+      padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+    th{color:var(--muted);font-size:0.8rem;letter-spacing:0.5px;}
+
+    .thumb{
+      width:48px;height:36px;object-fit:cover;border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+
+    input, select{
+      width:100%;padding:10px;margin-bottom:10px;border-radius:10px;
+      background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#fff;
+    }
+
+    .action-btn{
+      padding:6px 10px;
+      font-size:0.8rem;
+      font-weight:700;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-block;
+    }
+
+    .edit-btn{
+      background:#ffc107;
+      color:#000;
+    }
+
+    .delete-btn{
+      background:#dc3545;
+      color:#fff;
+    }
+
+    @media(max-width:900px){
+      .sidebar{display:none;}
+    }
+  </style>
 </head>
-
 <body>
+<div class="wrap">
 
-<h1>Gestión de Pilotos</h1>
-<p>Usuario: {{ user.username }}</p>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="dot"></div>
+      <h2>F1 Manager</h2>
+    </div>
 
-<a href="/dashboard">⬅ Volver al Dashboard</a>
-<hr>
+    <div class="user">
+      <img src="/static/img/user-placeholder.png">
+      <div>
+        <strong>{{ user.username }}</strong><br>
+        <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+      </div>
+    </div>
 
-<h2>Crear Piloto</h2>
-<form action="/pilotos/" method="post" enctype="multipart/form-data">
+    <nav>
+      <a href="/dashboard">🏁 Dashboard</a>
+      <a href="/pilotos_page">👨‍✈️ Pilotos</a>
+      <a href="/escuderias_page">🚗 Escuderías</a>
+      <a href="/grandes_premios/">🏆 Grandes Premios</a>
+      <a href="/reportes/">📄 Exportar Excel</a>
+    </nav>
 
-    <label>Nombre:</label>
-    <input type="text" name="nombre" required><br>
+    <button class="mutebtn" onclick="window.location.href='/logout'">Cerrar sesión</button>
+  </aside>
 
-    <label>Número:</label>
-    <input type="number" name="numero" required><br>
+  <!-- MAIN -->
+  <main class="main">
 
-    <label>Nacionalidad:</label>
-    <input type="text" name="nacionalidad" required><br>
+    <div class="header">
+      <div>
+        <h1 style="margin:0;font-weight:900">Gestión de Pilotos</h1>
+        <div style="color:var(--muted);margin-top:4px">
+          Usuario: {{ user.username }}
+        </div>
+      </div>
 
-    <label>Campeonatos pilotos:</label>
-    <input type="number" name="campeonatos_pilotos" value="0"><br>
+      <button class="btn" onclick="window.location.href='/dashboard'">← Volver al Dashboard</button>
+    </div>
 
-    <label>Escudería:</label>
-    <select name="escuderia_id" required>
-        <option value="">Seleccione una escudería</option>
-        {% for esc in escuderias %}
-            <option value="{{ esc.id }}">{{ esc.nombre }}</option>
-        {% endfor %}
-    </select><br>
+    <!-- Formulario Crear Piloto -->
+    <section class="panel">
+      <h3 style="margin-top:0">Crear Piloto</h3>
+      <form action="/pilotos/" method="post" enctype="multipart/form-data">
+        <input name="nombre" placeholder="Nombre" required>
+        <input name="numero" type="number" placeholder="Número" required>
+        <input name="nacionalidad" placeholder="Nacionalidad" required>
+        <input name="campeonatos_pilotos" type="number" min="0" value="0" placeholder="Campeonatos pilotos" required>
 
-    <label>Foto:</label>
-    <input type="file" name="foto"><br><br>
+        <select name="escuderia_id" required>
+          <option value="">Selecciona una escudería</option>
+          {% for e in escuderias %}
+            <option value="{{ e.id }}">{{ e.nombre }}</option>
+          {% endfor %}
+        </select>
 
-    <button type="submit">Crear Piloto</button>
-</form>
+        <input type="file" name="foto" accept="image/*">
 
-<hr>
-<h2>Mis Pilotos</h2>
+        <button class="btn" type="submit">Crear Piloto</button>
+      </form>
+    </section>
 
-{% if pilotos %}
-<table border="1" cellpadding="8">
-    <tr>
-        <th>Foto</th>
-        <th>Nombre</th>
-        <th>Número</th>
-        <th>Nacionalidad</th>
-        <th>Escudería</th>
-    </tr>
+    <!-- Lista de pilotos -->
+    <section class="panel">
+      <h3 style="margin-top:0">Mis Pilotos</h3>
 
-    {% for p in pilotos %}
-    <tr>
-        <td>
-            {% if p.foto %}
-                <img src="{{ p.foto }}" width="80">
-            {% else %}
-                Sin foto
-            {% endif %}
-        </td>
+      {% if pilotos %}
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Piloto</th>
+            <th>Número</th>
+            <th>Nacionalidad</th>
+            <th>Escudería</th>
+            <th>Campeonatos</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pilotos %}
+          <tr>
+            <td><img class="thumb" src="{{ p.foto or '/static/img/pilot-placeholder.png' }}"></td>
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.numero }}</td>
+            <td>{{ p.nacionalidad }}</td>
+            <td>{{ p.escuderia.nombre if p.escuderia else '-' }}</td>
+            <td>{{ p.campeonatos_pilotos }}</td>
 
-        <td>{{ p.nombre }}</td>
-        <td>#{{ p.numero }}</td>
-        <td>{{ p.nacionalidad }}</td>
-        <td>{{ p.escuderia }}</td>
-    </tr>
-    {% endfor %}
-</table>
+            <td style="display:flex; gap:8px">
 
-{% else %}
-<p>No tienes pilotos creados.</p>
-{% endif %}
+              <!-- EDITAR -->
+              <a class="action-btn edit-btn" href="/pilotos/{{ p.id }}/editar_form">
+                ✏️ Editar
+              </a>
 
+              <!-- ELIMINAR -->
+              <a class="action-btn delete-btn"
+                 href="/pilotos/{{ p.id }}/eliminar"
+                 onclick="return confirm('¿Eliminar este piloto?');">
+                ❌ Eliminar
+              </a>
+
+
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% else %}
+        <p style="color:var(--muted)">No tienes pilotos creados.</p>
+      {% endif %}
+    </section>
+
+    <footer>F1 Manager • Gestión de Pilotos</footer>
+
+  </main>
+</div>
 </body>
 </html>

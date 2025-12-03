@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Editar Piloto - F1 Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#09090b;
+      --card:#111113;
+      --muted:#9aa0a6;
+      --accent:#e10600;
+      --hover:rgba(255,255,255,0.07);
+      --glass:rgba(255,255,255,0.03);
+    }
+
+    *{box-sizing:border-box;font-family:"Montserrat",sans-serif;}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#050505 0%, #0b0b0c 100%);
+      color:#eee;
+      overflow-x:hidden;
+    }
+
+    .wrap{display:flex;min-height:100vh;}
+
+    /* Sidebar ---------------------------------------------------- */
+    .sidebar{
+      width:260px;background:#0c0c0d;padding:28px 20px;
+      border-right:1px solid rgba(255,255,255,0.05);
+      position:sticky;top:0;height:100vh;
+    }
+    .logo{display:flex;align-items:center;gap:12px;margin-bottom:26px;}
+    .logo .dot{
+      width:42px;height:42px;border-radius:10px;background:var(--accent);
+      box-shadow:0 6px 20px rgba(225,6,0,0.25);
+    }
+    .logo h2{margin:0;font-size:1.05rem;font-weight:900;}
+
+    .user{
+      margin-top:18px;padding:14px;border-radius:12px;background:var(--glass);
+      display:flex;gap:12px;align-items:center;
+    }
+    .user img{
+      width:46px;height:46px;border-radius:50%;object-fit:cover;
+      border:2px solid var(--accent);
+    }
+    nav{margin-top:26px;}
+    nav a{
+      display:block;padding:12px;border-radius:10px;
+      color:#cfcfcf;text-decoration:none;margin-bottom:6px;
+      transition:0.2s;
+    }
+    nav a:hover{background:var(--hover);color:#fff;}
+
+    .logoutbtn{
+      margin-top:20px;width:100%;padding:9px;
+      background:transparent;border-radius:10px;border:1px solid rgba(255,255,255,0.15);
+      color:#ddd;cursor:pointer;transition:.2s;font-size:.9rem;
+    }
+    .logoutbtn:hover{background:var(--hover);}
+
+    /* Main ------------------------------------------------------- */
+    .main{flex:1;padding:32px;}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+
+    .btn{
+      background:var(--accent);color:#fff;padding:10px 16px;border-radius:10px;
+      border:0;font-weight:700;cursor:pointer;transition:.2s;
+      box-shadow:0 4px 14px rgba(225,6,0,0.35);
+    }
+    .btn:hover{transform:scale(1.04);}
+
+    .panel{
+      background:var(--card);padding:26px;border-radius:14px;
+      box-shadow:0 6px 20px rgba(0,0,0,0.45);
+      max-width:600px;margin:auto;
+    }
+
+    input, select{
+      width:100%;padding:12px;margin-bottom:14px;border-radius:10px;
+      background:#0d0d0f;border:1px solid rgba(255,255,255,0.12);
+      color:#fff;font-size:0.92rem;
+    }
+
+    label{display:block;margin-bottom:6px;color:var(--muted);font-size:.85rem;}
+
+    .thumb{
+      width:120px;height:90px;border-radius:10px;margin-bottom:16px;
+      border:1px solid rgba(255,255,255,0.12);object-fit:cover;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="dot"></div>
+      <h2>F1 Manager</h2>
+    </div>
+
+    <div class="user">
+      <img src="/static/img/user-placeholder.png">
+      <div>
+        <strong>{{ user.username }}</strong><br>
+        <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+      </div>
+    </div>
+
+    <nav>
+      <a href="/dashboard">🏁 Dashboard</a>
+      <a href="/pilotos_page">👨‍✈️ Pilotos</a>
+      <a href="/escuderias_page">🚗 Escuderías</a>
+      <a href="/grandes_premios/">🏆 Grandes Premios</a>
+      <a href="/reportes/">📄 Exportar Excel</a>
+    </nav>
+
+    <button class="logoutbtn" onclick="window.location.href='/logout'">Cerrar sesión</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="header">
+      <div>
+        <h1 style="margin:0;font-weight:900">Editar Piloto</h1>
+        <div style="color:var(--muted);margin-top:4px;">Modifica los datos del piloto</div>
+      </div>
+
+      <button class="btn" onclick="window.location.href='/pilotos_page'">← Volver</button>
+    </div>
+
+    <!-- Panel Editar -->
+    <section class="panel">
+      <form action="/pilotos/{{ piloto.id }}/editar" method="post" enctype="multipart/form-data">
+
+        <label>Foto actual</label>
+        <img class="thumb" src="{{ piloto.foto or '/static/img/pilot-placeholder.png' }}">
+
+        <label>Subir nueva foto</label>
+        <input type="file" name="foto" accept="image/*">
+
+        <label>Nombre</label>
+        <input name="nombre" value="{{ piloto.nombre }}" required>
+
+        <label>Número</label>
+        <input name="numero" type="number" value="{{ piloto.numero }}" required>
+
+        <label>Nacionalidad</label>
+        <input name="nacionalidad" value="{{ piloto.nacionalidad }}" required>
+
+        <label>Campeonatos de Piloto</label>
+        <input name="campeonatos_pilotos" type="number" min="0" value="{{ piloto.campeonatos_pilotos }}" required>
+
+        <label>Escudería</label>
+        <select name="escuderia_id" required>
+          {% for e in escuderias %}
+            <option value="{{ e.id }}" {% if piloto.escuderia_id == e.id %}selected{% endif %}>
+              {{ e.nombre }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <button class="btn" type="submit">Guardar Cambios</button>
+      </form>
+    </section>
+
+  </main>
+
+</div>
+
+</body>
+</html>

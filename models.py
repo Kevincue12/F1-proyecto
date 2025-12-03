@@ -25,13 +25,13 @@ class Escuderia(Base):
     pais = Column(String(100))
     campeonatos_constructores = Column(Integer, default=0)
 
-    # CAMPO DE FOTO CORREGIDO:
-    logo = Column(String(255), nullable=True)   # ← DEBE COINCIDIR CON EL main.py
+    foto = Column(String(255), nullable=True)   # ← CAMBIADO DE "logo" a "foto"
 
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="escuderias")
 
     pilotos = relationship("Piloto", back_populates="escuderia", cascade="all, delete")
+
 
 
 class Piloto(Base):

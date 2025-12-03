@@ -1,75 +1,246 @@
-{% extends "dashboard_layout.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Escuderías - F1 Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&display=swap" rel="stylesheet">
 
-<div class="container mx-auto p-6">
+  <style>
+    :root{
+      --bg:#09090b;
+      --card:#111113;
+      --muted:#9aa0a6;
+      --accent:#e10600;
+      --glass: rgba(255,255,255,0.03);
+      --hover: rgba(255,255,255,0.06);
+    }
 
-    <h1 class="text-3xl font-bold text-red-500 mb-6">Escuderías</h1>
+    *{box-sizing:border-box;font-family:"Montserrat",sans-serif;}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#050505 0%, #0b0b0c 100%);
+      color:#eee;
+      overflow-x:hidden;
+    }
 
-    <!-- FORMULARIO CREAR ESCUDERIA -->
-    <div class="bg-gray-900 p-6 rounded-xl shadow-lg mb-10 border border-gray-700">
-        <h2 class="text-xl font-semibold text-white mb-4">Crear Escudería</h2>
+    .wrap{display:flex;min-height:100vh;}
 
-        <form action="/escuderias/" method="post" enctype="multipart/form-data" class="space-y-4">
+    .sidebar{
+      width:260px;
+      background:linear-gradient(180deg,#0f0f10, #0b0b0c);
+      padding:28px 20px;
+      border-right:1px solid rgba(255,255,255,0.05);
+      position:sticky;top:0;height:100vh;
+    }
 
-            <div>
-                <label class="text-white">Nombre</label>
-                <input type="text" name="nombre" required
-                    class="w-full bg-gray-800 text-white p-2 rounded-lg">
-            </div>
+    .logo{
+      display:flex;align-items:center;gap:12px;margin-bottom:28px;
+    }
+    .logo .dot{
+      width:44px;height:44px;border-radius:10px;background:var(--accent);
+      box-shadow:0 6px 20px rgba(225,6,0,0.25);
+    }
+    .logo h2{margin:0;font-size:1.1rem;font-weight:900;}
 
-            <div>
-                <label class="text-white">País</label>
-                <input type="text" name="pais" placeholder="Ej: Reino Unido, Italia, Alemania"
-                    required class="w-full bg-gray-800 text-white p-2 rounded-lg">
-            </div>
+    .user{
+      margin-top:18px;padding:14px;border-radius:12px;background:var(--glass);
+      display:flex;gap:12px;align-items:center;
+    }
+    .user img{
+      width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);
+    }
 
-            <div>
-                <label class="text-white">Campeonatos de Constructores</label>
-                <input type="number" name="campeonatos_constructores" min="0" required
-                    class="w-full bg-gray-800 text-white p-2 rounded-lg">
-            </div>
+    nav{margin-top:26px;}
+    nav a{
+      display:block;padding:12px;border-radius:10px;
+      color:#cfcfcf;text-decoration:none;margin-bottom:6px;
+      transition:0.2s;
+    }
+    nav a:hover{
+      background:var(--hover);
+      color:#fff;
+    }
 
-            <div>
-                <label class="text-white">Foto del equipo</label>
-                <input type="file" name="foto" accept="image/*"
-                    class="w-full text-white p-2 rounded-lg">
-            </div>
+    .mutebtn{
+      margin-top:20px;background:transparent;border:1px solid rgba(255,255,255,0.15);
+      color:#ddd;padding:8px 10px;border-radius:8px;width:100%;cursor:pointer;
+      transition:0.2s;
+    }
+    .mutebtn:hover{background:var(--hover);}
 
-            <button type="submit"
-                class="w-full bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg font-bold">
-                Guardar Escudería
-            </button>
+    .main{flex:1;padding:30px;}
 
-        </form>
+    .header{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;
+    }
+
+    .btn{
+      background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;
+      border:0;cursor:pointer;font-weight:700;transition:0.2s;
+      box-shadow:0 4px 14px rgba(225,6,0,0.35);
+    }
+    .btn:hover{transform:scale(1.04);}
+
+    .panel{
+      background:var(--card);padding:18px;border-radius:14px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.45);
+      margin-bottom:20px;
+    }
+
+    table{width:100%;border-collapse:collapse;color:#ddd;font-size:0.95rem;}
+    th,td{
+      padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+    th{color:var(--muted);font-size:0.8rem;letter-spacing:0.5px;}
+
+    .thumb{
+      width:48px;height:36px;object-fit:cover;border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+
+    input{
+      width:100%;padding:10px;margin-bottom:10px;border-radius:10px;
+      background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#fff;
+    }
+
+    /* BOTONES DE ACCIÓN */
+    .action-btn{
+      padding:6px 10px;
+      font-size:0.8rem;
+      font-weight:700;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-block;
+    }
+    .edit-btn{
+      background:#ffc107;
+      color:#000;
+    }
+    .delete-btn{
+      background:#dc3545;
+      color:#fff;
+    }
+
+    footer{
+      margin-top:18px;color:var(--muted);font-size:0.85rem;text-align:center;
+    }
+
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="dot"></div>
+      <h2>F1 Manager</h2>
     </div>
 
-    <!-- LISTADO DE ESCUDERIAS -->
-    <h2 class="text-2xl font-bold text-white mb-4">Listado de Escuderías</h2>
+    <div class="user">
+      <img src="/static/img/user-placeholder.png">
+      <div>
+        <strong>{{ user.username }}</strong><br>
+        <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+      </div>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for e in escuderias %}
-        <div class="bg-gray-900 p-4 rounded-lg shadow-md border border-gray-700">
+    <nav>
+      <a href="/dashboard">🏁 Dashboard</a>
+      <a href="/pilotos_page">👨‍✈️ Pilotos</a>
+      <a href="/escuderias_page">🚗 Escuderías</a>
+      <a href="/grandes_premios/">🏆 Grandes Premios</a>
+      <a href="/reportes/">📄 Exportar Excel</a>
+    </nav>
 
-            {% if e.foto %}
-            <img src="{{ e.foto }}" class="w-full h-40 object-cover rounded-md mb-3">
-            {% else %}
-            <img src="/static/img/default_team.png"
-                 class="w-full h-40 object-cover rounded-md mb-3">
-            {% endif %}
+    <button class="mutebtn" onclick="window.location.href='/logout'">Cerrar sesión</button>
+  </aside>
 
-            <h3 class="text-xl text-white font-bold">{{ e.nombre }}</h3>
-            <p class="text-gray-300">País: {{ e.pais }}</p>
-            <p class="text-gray-300">Títulos: {{ e.campeonatos_constructores }}</p>
+  <!-- MAIN -->
+  <main class="main">
 
-            <div class="mt-3 flex justify-between">
-                <a href="#" class="bg-blue-600 text-white px-3 py-1 rounded">Editar</a>
-                <a href="#" class="bg-red-600 text-white px-3 py-1 rounded">Eliminar</a>
-            </div>
-
+    <div class="header">
+      <div>
+        <h1 style="margin:0;font-weight:900">Gestión de Escuderías</h1>
+        <div style="color:var(--muted);margin-top:4px">
+          Usuario: {{ user.username }}
         </div>
-        {% endfor %}
+      </div>
+
+      <button class="btn" onclick="window.location.href='/dashboard'">← Volver al Dashboard</button>
     </div>
 
+    <!-- Formulario Crear Escudería -->
+    <section class="panel">
+      <h3 style="margin-top:0">Crear Escudería</h3>
+
+      <form action="/escuderias/" method="post" enctype="multipart/form-data">
+        <input name="nombre" placeholder="Nombre de la Escudería" required>
+        <input name="pais" placeholder="País de origen" required>
+        <input name="campeonatos_constructores" type="number" min="0" value="0" placeholder="Campeonatos de Constructores" required>
+        <input type="file" name="foto" accept="image/*">
+        <button class="btn" type="submit">Crear Escudería</button>
+      </form>
+    </section>
+
+    <!-- Lista de Escuderías -->
+    <section class="panel">
+      <h3 style="margin-top:0">Mis Escuderías</h3>
+
+      {% if escuderias %}
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Nombre</th>
+            <th>País</th>
+            <th>Campeonatos</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in escuderias %}
+          <tr>
+            <td><img class="thumb" src="{{ e.foto or '/static/img/team-placeholder.png' }}"></td>
+            <td>{{ e.nombre }}</td>
+            <td>{{ e.pais }}</td>
+            <td>{{ e.campeonatos_constructores }}</td>
+
+            <td style="display:flex; gap:8px">
+
+              <!-- EDITAR -->
+              <a class="action-btn edit-btn" href="/escuderias/{{ e.id }}/editar_form">
+                ✏️ Editar
+              </a>
+
+              <!-- ELIMINAR -->
+              <form action="/escuderias/{{ e.id }}/eliminar" method="post">
+                <button type="submit"
+                        class="action-btn delete-btn"
+                        onclick="return confirm('¿Eliminar esta escudería?')">
+                  ❌ Eliminar
+                </button>
+              </form>
+
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% else %}
+        <p style="color:var(--muted)">No tienes escuderías creadas.</p>
+      {% endif %}
+    </section>
+
+    <footer>F1 Manager • Gestión de Escuderías</footer>
+
+  </main>
 </div>
 
-{% endblock %}
+</body>
+</html>

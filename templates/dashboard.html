@@ -125,11 +125,6 @@
       border:1px solid rgba(255,255,255,0.1);
     }
 
-    input, select{
-      width:100%;padding:10px;margin-bottom:10px;border-radius:10px;
-      background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#fff;
-    }
-
     footer{
       margin-top:18px;color:var(--muted);font-size:0.85rem;text-align:center;
     }
@@ -162,8 +157,8 @@
 
     <nav>
       <a href="/dashboard">🏁 Dashboard</a>
-      <a href="/pilotos/">👨‍✈️ Pilotos</a>
-      <a href="/escuderias/">🚗 Escuderías</a>
+      <a href="/pilotos_page">👨‍✈️ Pilotos</a>
+      <a href="/escuderias_page">🚗 Escuderías</a>
       <a href="/grandes_premios/">🏆 Grandes Premios</a>
       <a href="/reportes/">📄 Exportar Excel</a>
     </nav>
@@ -188,8 +183,8 @@
           🔎 <input placeholder="Buscar piloto o escudería...">
         </div>
 
-        <!-- Botón para crear piloto (queda abajo, no se muestra primero) -->
-        <button class="btn" onclick="document.getElementById('createPilot').scrollIntoView({behavior:'smooth'})">Nuevo Piloto</button>
+        <!-- AHORA este botón lleva a la página de pilotos -->
+        <button class="btn" onclick="window.location.href='/pilotos_page'">Nuevo Piloto</button>
       </div>
     </div>
 
@@ -208,12 +203,12 @@
           </tr>
         </thead>
         <tbody>
-          {% for p in pilotos_ordenados %}
+          {% for fila in tabla %}
           <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ p.nombre }}</td>
-            <td>{{ p.escuderia }}</td>
-            <td><strong>{{ p.puntos }}</strong></td>
+            <td>{{ fila.puesto }}</td>
+            <td>{{ fila.piloto }}</td>
+            <td>{{ fila.escuderia or '-' }}</td>
+            <td><strong>{{ fila.puntos }}</strong></td>
           </tr>
           {% endfor %}
         </tbody>
@@ -233,7 +228,7 @@
       </div>
       <div class="card">
         <h3>Grandes Premios</h3>
-        <div class="value" style="font-size:1.7rem;font-weight:800">{{ grandes_premios|length }}</div>
+        <div class="value" style="font-size:1.7rem;font-weight:800">{{ grandes_premios|length if grandes_premios is defined else 0 }}</div>
       </div>
     </div>
 
@@ -254,36 +249,13 @@
                 <td><img class="thumb" src="{{ p.foto or '/static/img/pilot-placeholder.png' }}"></td>
                 <td>{{ p.nombre }}</td>
                 <td>{{ p.numero }}</td>
-                <td>{{ p.escuderia or '-' }}</td>
+                <td>{{ p.escuderia.nombre if p.escuderia else '-' }}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-
-        <!-- Crear Piloto -->
-        <div class="panel" id="createPilot" style="margin-top:18px">
-          <h3 style="margin-top:0">Crear Piloto</h3>
-
-          <form action="/pilotos/" method="post" enctype="multipart/form-data">
-            <input name="nombre" placeholder="Nombre" required>
-            <input name="numero" type="number" placeholder="Número" required>
-            <input name="nacionalidad" placeholder="Nacionalidad" required>
-
-            <select name="escuderia_id" required>
-              <option value="">Selecciona Escudería</option>
-              {% for e in escuderias %}
-                <option value="{{ e.id }}">{{ e.nombre }}</option>
-              {% endfor %}
-            </select>
-
-            <input type="file" name="foto" accept="image/*">
-
-            <button class="btn" type="submit">Crear Piloto</button>
-          </form>
-        </div>
       </section>
-
 
       <!-- Escuderías -->
       <aside>

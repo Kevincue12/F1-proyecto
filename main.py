@@ -1,36 +1,25 @@
-from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form, Request, Cookie
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import timedelta
 import shutil
 import uuid
 import os
-from jose import JWTError, jwt
 
 import models, schemas, crud, crud_usuarios
 from database import SessionLocal, engine
+from auth import authenticate_and_create_token, get_current_user
 
-# === IMPORTS CORREGIDOS ===
-from auth import authenticate_and_create_token, create_access_token, get_current_user
+# ======================================================
+# CONFIG FASTAPI
+# ======================================================
+app = FastAPI(title="F1 Manager")
 
-# ==========================================
-# CONFIG JWT
-# ==========================================
-SECRET_KEY = "supersecreto"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# ==========================================
-# FASTAPI
-# ==========================================
-app = FastAPI(title="API F1 - Pilotos, Escuderías y Grandes Premios (con usuarios)")
-
-# ==========================================
-# STATIC Y TEMPLATES
-# ==========================================
+# ======================================================
+# STATIC FILES
+# ======================================================
 os.makedirs("static/uploads/escuderias", exist_ok=True)
 os.makedirs("static/uploads/pilotos", exist_ok=True)
 os.makedirs("static/img", exist_ok=True)
@@ -38,9 +27,9 @@ os.makedirs("static/img", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ==========================================
-# DB
-# ==========================================
+# ======================================================
+# DATABASE
+# ======================================================
 models.Base.metadata.create_all(bind=engine)
 
 
@@ -51,10 +40,9 @@ def get_db():
     finally:
         db.close()
 
-
-# ==========================================
-# FRONTEND PAGES
-# ==========================================
+# ======================================================
+# PÁGINAS BASE
+# ======================================================
 @app.get("/")
 def index():
     return FileResponse("templates/index.html")
@@ -70,71 +58,70 @@ def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 
-# ==========================================
-# REGISTRO FORM
-# ==========================================
+# ======================================================
+# REGISTRO
+# ======================================================
 @app.post("/form_register")
 def form_register(
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    user = crud_usuarios.get_user_by_username(db, username)
-    if user:
+    exists = crud_usuarios.get_user_by_username(db, username)
+    if exists:
         return RedirectResponse("/register?error=usuario_existente", status_code=303)
 
-    new_user = schemas.UserCreate(username=username, password=password)
-    crud_usuarios.create_user(db, new_user)
+    usuario = schemas.UserCreate(username=username, password=password)
+    crud_usuarios.create_user(db, usuario)
 
     return RedirectResponse("/login?created=1", status_code=303)
 
-
-# ==========================================
+# ======================================================
 # LOGIN – CREA COOKIE
-# ==========================================
+# ======================================================
 @app.post("/token")
 async def login_for_access_token(
     request: Request,
-    form_data: schemas.LoginForm = Depends(),
+    form: schemas.LoginForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    user = authenticate_and_create_token(db, form_data.username, form_data.password)
+    user = authenticate_and_create_token(db, form.username, form.password)
 
     if not user:
         raise HTTPException(status_code=400, detail="Usuario o contraseña incorrectos")
 
-    access_token = user["access_token"]
+    token = user["access_token"]
 
-    response = RedirectResponse(url="/dashboard", status_code=302)
+    response = RedirectResponse("/dashboard", status_code=302)
     response.set_cookie(
-        key="access_token",
-        value=access_token,
+        "access_token",
+        token,
         httponly=True,
         samesite="strict",
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        max_age=60 * 60
     )
 
     return response
 
 
-# ==========================================
+# ======================================================
 # LOGOUT
-# ==========================================
+# ======================================================
 @app.get("/logout")
 def logout():
-    response = RedirectResponse("/", status_code=302)
-    response.delete_cookie("access_token")
-    return response
+    resp = RedirectResponse("/", status_code=302)
+    resp.delete_cookie("access_token")
+    return resp
 
 
-# ==========================================
-# ESCUDERÍAS
-# ==========================================
+# ======================================================
+# ESCUDERÍAS – API
+# ======================================================
 @app.post("/escuderias/", response_model=schemas.EscuderiaOut)
 async def crear_escuderia(
     nombre: str = Form(...),
     pais: str = Form(...),
-    campeonatos_constructores: int = Form(...),
+    campeonatos_constructores: int = Form(0),
     foto: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -146,14 +133,14 @@ async def crear_escuderia(
         with open(ruta, "wb") as buffer:
             shutil.copyfileobj(foto.file, buffer)
 
-    esc_in = schemas.EscuderiaCreate(
+    esc_data = schemas.EscuderiaCreate(
         nombre=nombre,
         pais=pais,
         campeonatos_constructores=campeonatos_constructores,
         foto=ruta
     )
 
-    return crud.create_escuderia(db, esc_in, owner_id=current_user.id)
+    return crud.create_escuderia(db, esc_data, owner_id=current_user.id)
 
 
 @app.get("/escuderias/", response_model=List[schemas.EscuderiaOut])
@@ -164,15 +151,97 @@ def listar_escuderias(
     return crud.get_escuderias(db, owner_id=current_user.id)
 
 
-# ==========================================
-# PILOTOS (endpoint API)
-# ==========================================
+# ======================================================
+# ESCUDERÍAS – PÁGINA HTML
+# ======================================================
+@app.get("/escuderias_page", response_class=HTMLResponse)
+def escuderias_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    escs = crud.get_escuderias(db, owner_id=current_user.id)
+    return templates.TemplateResponse(
+        "escuderias.html",
+        {"request": request, "user": current_user, "escuderias": escs}
+    )
+
+
+# ======================================================
+# ESCUDERÍAS – EDITAR / ELIMINAR
+# ======================================================
+@app.get("/escuderias/{id}/editar_form", response_class=HTMLResponse)
+def editar_escuderia_form(
+    id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    esc = crud.get_escuderia(db, id, owner_id=current_user.id)
+    if not esc:
+        return RedirectResponse("/escuderias_page", status_code=302)
+
+    return templates.TemplateResponse(
+        "editar_escuderia.html",
+        {"request": request, "user": current_user, "escuderia": esc}
+    )
+
+
+@app.post("/escuderias/{id}/editar")
+async def editar_escuderia(
+    id: int,
+    nombre: str = Form(...),
+    pais: str = Form(...),
+    campeonatos_constructores: int = Form(...),
+    foto: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    esc = crud.get_escuderia(db, id, owner_id=current_user.id)
+    if not esc:
+        raise HTTPException(404, "Escudería no encontrada")
+
+    ruta = esc.foto
+    if foto:
+        nombre_unico = f"{uuid.uuid4()}_{foto.filename}"
+        ruta = f"static/uploads/escuderias/{nombre_unico}"
+        with open(ruta, "wb") as buffer:
+            shutil.copyfileobj(foto.file, buffer)
+
+    data = schemas.EscuderiaCreate(
+        nombre=nombre,
+        pais=pais,
+        campeonatos_constructores=campeonatos_constructores,
+        foto=ruta
+    )
+
+    crud.update_escuderia(db, id, data, owner_id=current_user.id)
+
+    return RedirectResponse("/escuderias_page", status_code=303)
+
+
+@app.post("/escuderias/{id}/eliminar")
+def eliminar_escuderia(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    eliminado = crud.delete_escuderia(db, id, owner_id=current_user.id)
+    if not eliminado:
+        raise HTTPException(404, "Escudería no encontrada")
+
+    return RedirectResponse("/escuderias_page", status_code=303)
+
+
+# ======================================================
+# PILOTOS – API
+# ======================================================
 @app.post("/pilotos/", response_model=schemas.PilotoOut)
 async def crear_piloto(
     nombre: str = Form(...),
     numero: int = Form(...),
     nacionalidad: str = Form(...),
-    campeonatos_pilotos: int = Form(...),
+    campeonatos_pilotos: int = Form(0),
     escuderia_id: int = Form(...),
     foto: UploadFile = File(None),
     db: Session = Depends(get_db),
@@ -185,7 +254,7 @@ async def crear_piloto(
         with open(ruta, "wb") as buffer:
             shutil.copyfileobj(foto.file, buffer)
 
-    piloto_in = schemas.PilotoCreate(
+    data = schemas.PilotoCreate(
         nombre=nombre,
         numero=numero,
         nacionalidad=nacionalidad,
@@ -194,7 +263,7 @@ async def crear_piloto(
         foto=ruta
     )
 
-    return crud.create_piloto(db, piloto_in, owner_id=current_user.id)
+    return crud.create_piloto(db, data, owner_id=current_user.id)
 
 
 @app.get("/pilotos/", response_model=List[schemas.PilotoOut])
@@ -205,11 +274,114 @@ def listar_pilotos(
     return crud.get_pilotos(db, owner_id=current_user.id)
 
 
-# ==========================================
+# ======================================================
+# PILOTOS – PÁGINA HTML
+# ======================================================
+@app.get("/pilotos_page", response_class=HTMLResponse)
+def pilotos_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    pilotos = crud.get_pilotos(db, owner_id=current_user.id)
+    escs = crud.get_escuderias(db, owner_id=current_user.id)
+
+    return templates.TemplateResponse(
+        "pilotos.html",
+        {"request": request, "user": current_user, "pilotos": pilotos, "escuderias": escs}
+    )
+
+
+# ======================================================
+# PILOTOS – EDITAR / ELIMINAR
+# ======================================================
+@app.get("/pilotos/{id}/editar_form", response_class=HTMLResponse)
+def editar_piloto_form(
+    id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    piloto = db.query(models.Piloto).filter(
+        models.Piloto.id == id, models.Piloto.owner_id == current_user.id
+    ).first()
+
+    if not piloto:
+        return RedirectResponse("/pilotos_page", status_code=302)
+
+    escs = crud.get_escuderias(db, owner_id=current_user.id)
+
+    return templates.TemplateResponse(
+        "editar_piloto.html",
+        {"request": request, "user": current_user, "piloto": piloto, "escuderias": escs}
+    )
+
+
+@app.post("/pilotos/{piloto_id}/editar")
+async def editar_piloto(
+    piloto_id: int,
+    nombre: str = Form(...),
+    numero: int = Form(...),
+    nacionalidad: str = Form(...),
+    campeonatos_pilotos: int = Form(...),
+    escuderia_id: int = Form(...),
+    foto: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+
+    piloto_db = db.query(models.Piloto).filter(
+        models.Piloto.id == piloto_id,
+        models.Piloto.owner_id == current_user.id
+    ).first()
+
+    if not piloto_db:
+        raise HTTPException(status_code=404, detail="Piloto no encontrado")
+
+    # conservar foto actual
+    ruta = piloto_db.foto  
+
+    # SOLO si realmente se subió una nueva foto
+    if foto and foto.filename and foto.filename.strip():
+        nombre_unico = f"{uuid.uuid4()}_{foto.filename}"
+        ruta = f"static/uploads/pilotos/{nombre_unico}"
+        with open(ruta, "wb") as buffer:
+            shutil.copyfileobj(foto.file, buffer)
+
+    piloto_data = schemas.PilotoCreate(
+        nombre=nombre,
+        numero=numero,
+        nacionalidad=nacionalidad,
+        campeonatos_pilotos=campeonatos_pilotos,
+        escuderia_id=escuderia_id,
+        foto=ruta
+    )
+
+    actualizado = crud.update_piloto(db, piloto_id, piloto_data, owner_id=current_user.id)
+    if not actualizado:
+        raise HTTPException(status_code=404, detail="Piloto no encontrado")
+
+    return RedirectResponse("/pilotos_page", status_code=303)
+
+@app.get("/pilotos/{piloto_id}/eliminar")
+def eliminar_piloto(
+    piloto_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    eliminado = crud.delete_piloto(db, piloto_id, owner_id=current_user.id)
+    if not eliminado:
+        raise HTTPException(status_code=404, detail="Piloto no encontrado")
+
+    return RedirectResponse("/pilotos_page", status_code=303)
+
+
+
+# ======================================================
 # GRANDES PREMIOS
-# ==========================================
+# ======================================================
 @app.post("/grandes_premios/", response_model=schemas.GranPremioOut)
-def crear_gran_premio(
+def crear_gp(
     gp: schemas.GranPremioCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -218,18 +390,18 @@ def crear_gran_premio(
 
 
 @app.get("/grandes_premios/", response_model=List[schemas.GranPremioOut])
-def listar_grandes_premios(
+def listar_gp(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     return crud.get_grandes_premios(db, owner_id=current_user.id)
 
 
-# ==========================================
+# ======================================================
 # RESULTADOS
-# ==========================================
+# ======================================================
 @app.post("/resultados/", response_model=schemas.ResultadoOut)
-def agregar_resultado(
+def crear_resultado(
     resultado: schemas.ResultadoCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -237,33 +409,30 @@ def agregar_resultado(
     return crud.create_resultado(db, resultado, owner_id=current_user.id)
 
 
-# ==========================================
-# CAMPEONATO PILOTOS
-# ==========================================
-@app.get("/campeonato/pilotos", response_model=List[schemas.CampeonatoFila])
-def campeonato_pilotos(
+# ======================================================
+# CAMPEONATO
+# ======================================================
+@app.get("/campeonato/pilotos")
+def campeonato(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     return crud.get_campeonato_pilotos(db, owner_id=current_user.id)
 
 
-# ==========================================
-# DASHBOARD (Sin formulario de pilotos)
-# ==========================================
+# ======================================================
+# DASHBOARD FINAL
+# ======================================================
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(
     request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-
     escuderias = crud.get_escuderias(db, owner_id=current_user.id)
     pilotos = crud.get_pilotos(db, owner_id=current_user.id)
     tabla = crud.get_campeonato_pilotos(db, owner_id=current_user.id)
-
-    def norm(path):
-        return ("/" + path) if path and not path.startswith("/") else path
+    gps = crud.get_grandes_premios(db, owner_id=current_user.id)
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -272,46 +441,24 @@ def dashboard(
             "user": current_user,
             "escuderias": escuderias,
             "pilotos": pilotos,
-            "tabla": tabla
+            "tabla": tabla,
+            "grandes_premios": gps
         }
     )
 
 
-# ==========================================
-# PÁGINA /pilotos_page (Crear y listar pilotos)
-# ==========================================
-@app.get("/pilotos_page", response_class=HTMLResponse)
-def pilotos_page(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-
-    pilotos = crud.get_pilotos(db, owner_id=current_user.id)
-    escuderias = crud.get_escuderias(db, owner_id=current_user.id)
-
-    return templates.TemplateResponse(
-        "pilotos.html",
-        {
-            "request": request,
-            "user": current_user,
-            "pilotos": pilotos,
-            "escuderias": escuderias
-        }
-    )
-
-
-# ==========================================
-# REPORTES EXCEL
-# ==========================================
+# ======================================================
+# EXPORTAR EXCEL
+# ======================================================
 @app.get("/reportes/")
-def generar_reportes_excel(
+def reportes(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     crud.generar_reportes(db, owner_id=current_user.id)
+
     return FileResponse(
         "reportes_f1.xlsx",
-        filename="reportes_f1.xlsx",
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename="reportes_f1.xlsx"
     )

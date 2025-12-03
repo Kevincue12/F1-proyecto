@@ -39,7 +39,7 @@ class PilotoBase(BaseModel):
     nacionalidad: str
     campeonatos_pilotos: int
     escuderia_id: int
-    foto: Optional[str] = None  # Ruta de la imagen
+    foto: Optional[str] = None  # Ruta guardada de la imagen
 
 
 class PilotoCreate(PilotoBase):
@@ -58,7 +58,7 @@ class EscuderiaBase(BaseModel):
     nombre: str
     pais: str
     campeonatos_constructores: int = 0
-    foto: Optional[str] = None  # Ruta de la imagen
+    foto: Optional[str] = None  # ← debe coincidir con models.Escuderia.foto
 
 
 class EscuderiaCreate(EscuderiaBase):
@@ -67,7 +67,7 @@ class EscuderiaCreate(EscuderiaBase):
 
 class EscuderiaOut(EscuderiaBase):
     id: int
-    pilotos: List["PilotoOut"] = Field(default_factory=list)
+    pilotos: List[PilotoOut] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
@@ -128,7 +128,7 @@ class CampeonatoFila(BaseModel):
 
 
 # -----------------------------------------------------------
-# FORMULARIOS ESPECIALES PARA SUBIR FOTOS
+# FORMULARIOS ESPECIALES PARA SUBIR FOTOS (para usar con Depends)
 # -----------------------------------------------------------
 
 class EscuderiaForm:
@@ -137,7 +137,7 @@ class EscuderiaForm:
         nombre: str = Form(...),
         pais: str = Form(...),
         campeonatos_constructores: int = Form(0),
-        foto: UploadFile = File(None)
+        foto: UploadFile = File(None),
     ):
         self.nombre = nombre
         self.pais = pais
@@ -153,7 +153,7 @@ class PilotoForm:
         nacionalidad: str = Form(...),
         campeonatos_pilotos: int = Form(0),
         escuderia_id: int = Form(...),
-        foto: UploadFile = File(None)
+        foto: UploadFile = File(None),
     ):
         self.nombre = nombre
         self.numero = numero
