@@ -7,7 +7,7 @@ from schemas import EscuderiaCreate, PilotoCreate, GranPremioCreate, ResultadoCr
 import pandas as pd
 
 
-# ---------------- ESCUDERÍAS ----------------
+# ===================== ESCUDERÍAS =====================
 def get_escuderias(db: Session, owner_id: int) -> List[Escuderia]:
     return db.query(Escuderia).filter(Escuderia.owner_id == owner_id).all()
 
@@ -34,22 +34,13 @@ def create_escuderia(db: Session, escuderia: EscuderiaCreate, owner_id: int):
         nombre=escuderia.nombre,
         pais=escuderia.pais,
         campeonatos_constructores=escuderia.campeonatos_constructores,
-        foto=escuderia.foto  # solo nombre del archivo
+        foto=escuderia.foto
     )
 
     db.add(db_esc)
     db.commit()
     db.refresh(db_esc)
     return db_esc
-
-
-def delete_escuderia(db: Session, escuderia_id: int, owner_id: int):
-    esc = get_escuderia(db, escuderia_id, owner_id)
-    if esc:
-        db.delete(esc)
-        db.commit()
-        return esc
-    return None
 
 
 def update_escuderia(db: Session, escuderia_id: int, escuderia_data: EscuderiaCreate, owner_id: int):
@@ -69,7 +60,7 @@ def update_escuderia(db: Session, escuderia_id: int, escuderia_data: EscuderiaCr
     data = escuderia_data.dict()
     for key, value in data.items():
         if key == "foto" and value is None:
-            continue  # no borrar la imagen si no se subió nueva
+            continue
         setattr(esc, key, value)
 
     db.commit()
@@ -77,9 +68,27 @@ def update_escuderia(db: Session, escuderia_id: int, escuderia_data: EscuderiaCr
     return esc
 
 
-# ---------------- PILOTOS ----------------
+def delete_escuderia(db: Session, escuderia_id: int, owner_id: int):
+    esc = get_escuderia(db, escuderia_id, owner_id)
+    if esc:
+        db.delete(esc)
+        db.commit()
+        return esc
+    return None
+
+
+# ===================== PILOTOS =====================
 def get_pilotos(db: Session, owner_id: int):
     return db.query(Piloto).filter(Piloto.owner_id == owner_id).all()
+
+
+# 🚀 ESTA ES LA FUNCIÓN QUE HACÍA FALTA
+def get_piloto(db: Session, piloto_id: int, owner_id: int):
+    return (
+        db.query(Piloto)
+        .filter(Piloto.id == piloto_id, Piloto.owner_id == owner_id)
+        .first()
+    )
 
 
 def get_piloto_por_numero(db: Session, numero: int, owner_id: int):
@@ -105,12 +114,12 @@ def create_piloto(db: Session, piloto: PilotoCreate, owner_id: int):
     if len(escuderia.pilotos) >= 2:
         raise HTTPException(status_code=400, detail=f"La escudería '{escuderia.nombre}' ya tiene 2 pilotos.")
 
-    piloto_existente = (
+    exist = (
         db.query(Piloto)
         .filter(Piloto.owner_id == owner_id, Piloto.numero == piloto.numero)
         .first()
     )
-    if piloto_existente:
+    if exist:
         raise HTTPException(status_code=400, detail=f"Ya tienes un piloto con el número {piloto.numero}.")
 
     db_piloto = Piloto(
@@ -120,7 +129,7 @@ def create_piloto(db: Session, piloto: PilotoCreate, owner_id: int):
         nacionalidad=piloto.nacionalidad,
         campeonatos_pilotos=piloto.campeonatos_pilotos,
         escuderia_id=piloto.escuderia_id,
-        foto=piloto.foto  # solo nombre del archivo
+        foto=piloto.foto
     )
 
     db.add(db_piloto)
@@ -129,17 +138,8 @@ def create_piloto(db: Session, piloto: PilotoCreate, owner_id: int):
     return db_piloto
 
 
-def delete_piloto(db: Session, piloto_id: int, owner_id: int):
-    piloto = db.query(Piloto).filter(Piloto.id == piloto_id, Piloto.owner_id == owner_id).first()
-    if piloto:
-        db.delete(piloto)
-        db.commit()
-        return piloto
-    return None
-
-
 def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_id: int):
-    piloto = db.query(Piloto).filter(Piloto.id == piloto_id, Piloto.owner_id == owner_id).first()
+    piloto = get_piloto(db, piloto_id, owner_id)
     if not piloto:
         return None
 
@@ -151,8 +151,8 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_
     if not escuderia:
         raise HTTPException(status_code=404, detail="La escudería seleccionada no existe.")
 
-    pilotos_escuderia = [p for p in escuderia.pilotos if p.id != piloto_id]
-    if len(pilotos_escuderia) >= 2:
+    pilotos_esc = [p for p in escuderia.pilotos if p.id != piloto_id]
+    if len(pilotos_esc) >= 2:
         raise HTTPException(status_code=400, detail="La escudería ya tiene 2 pilotos.")
 
     if piloto.numero != piloto_data.numero:
@@ -167,7 +167,7 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_
     data = piloto_data.dict()
     for key, value in data.items():
         if key == "foto" and value is None:
-            continue  # no borrar la imagen si no se subió nueva
+            continue
         setattr(piloto, key, value)
 
     db.commit()
@@ -175,11 +175,17 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_
     return piloto
 
 
-# ---------------- GRANDES PREMIOS ----------------
-def create_gran_premio(db: Session, gp: GranPremioCreate, owner_id: int):
-    if not gp.fecha:
-        raise HTTPException(status_code=400, detail="La fecha es obligatoria.")
+def delete_piloto(db: Session, piloto_id: int, owner_id: int):
+    piloto = get_piloto(db, piloto_id, owner_id)
+    if piloto:
+        db.delete(piloto)
+        db.commit()
+        return piloto
+    return None
 
+
+# ===================== GRANDES PREMIOS =====================
+def create_gran_premio(db: Session, gp: GranPremioCreate, owner_id: int):
     existente = (
         db.query(GranPremio)
         .filter(GranPremio.owner_id == owner_id, GranPremio.nombre == gp.nombre)
@@ -207,11 +213,8 @@ def get_gran_premio(db: Session, gp_id: int, owner_id: int):
     )
 
 
-# ---------------- RESULTADOS ----------------
+# ===================== RESULTADOS =====================
 def create_resultado(db: Session, resultado: ResultadoCreate, owner_id: int):
-    if not resultado.posicion or not resultado.gran_premio_id or not resultado.piloto_numero:
-        raise HTTPException(status_code=400, detail="Todos los campos son obligatorios.")
-
     piloto = (
         db.query(Piloto)
         .filter(Piloto.owner_id == owner_id, Piloto.numero == resultado.piloto_numero)
@@ -228,20 +231,28 @@ def create_resultado(db: Session, resultado: ResultadoCreate, owner_id: int):
     if not gp:
         raise HTTPException(status_code=404, detail="Gran Premio no encontrado.")
 
-    existente = (
+    conflict = (
         db.query(Resultado)
-        .filter(Resultado.piloto_id == piloto.id, Resultado.gran_premio_id == gp.id, Resultado.owner_id == owner_id)
+        .filter(
+            Resultado.owner_id == owner_id,
+            Resultado.gran_premio_id == gp.id,
+            Resultado.piloto_id == piloto.id
+        )
         .first()
     )
-    if existente:
+    if conflict:
         raise HTTPException(status_code=400, detail="El piloto ya tiene resultado en este GP.")
 
-    posicion_ocupada = (
+    pos = (
         db.query(Resultado)
-        .filter(Resultado.gran_premio_id == gp.id, Resultado.posicion == resultado.posicion, Resultado.owner_id == owner_id)
+        .filter(
+            Resultado.owner_id == owner_id,
+            Resultado.gran_premio_id == gp.id,
+            Resultado.posicion == resultado.posicion
+        )
         .first()
     )
-    if posicion_ocupada:
+    if pos:
         raise HTTPException(status_code=400, detail=f"La posición {resultado.posicion} ya está ocupada.")
 
     nuevo_res = Resultado(
@@ -264,45 +275,42 @@ def get_resultados_por_gp(db: Session, gp_id: int, owner_id: int):
     )
 
 
-# ---------------- CAMPEONATO ----------------
+# ===================== CAMPEONATO =====================
 def get_campeonato_pilotos(db: Session, owner_id: int):
-    puntos_por_posicion = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
+    puntos = {1:25,2:18,3:15,4:12,5:10,6:8,7:6,8:4,9:2,10:1}
 
     pilotos = db.query(Piloto).filter(Piloto.owner_id == owner_id).all()
     tabla = []
 
     for p in pilotos:
-        puntos = 0
+        total = 0
         for r in p.resultados:
             if r.owner_id == owner_id:
-                puntos += puntos_por_posicion.get(r.posicion, 0)
+                total += puntos.get(r.posicion, 0)
 
-        tabla.append(
-            {
-                "piloto": p.nombre,
-                "numero": p.numero,
-                "escuderia": p.escuderia.nombre if p.escuderia else None,
-                "puntos": puntos,
-            }
-        )
+        tabla.append({
+            "piloto": p.nombre,
+            "numero": p.numero,
+            "escuderia": p.escuderia.nombre if p.escuderia else None,
+            "puntos": total,
+        })
 
-    tabla_ordenada = sorted(tabla, key=lambda x: x["puntos"], reverse=True)
-
-    for i, fila in enumerate(tabla_ordenada, start=1):
+    tabla = sorted(tabla, key=lambda x: x["puntos"], reverse=True)
+    for i, fila in enumerate(tabla, start=1):
         fila["puesto"] = i
 
-    return tabla_ordenada
+    return tabla
 
 
-# ---------------- REPORTES ----------------
+# ===================== REPORTES =====================
 def generar_reportes(db: Session, owner_id: int):
-    escuderias = db.query(Escuderia).filter(Escuderia.owner_id == owner_id).all()
-    df_escuderias = pd.DataFrame(
-        [{"ID": e.id, "Nombre": e.nombre, "Pais": e.pais} for e in escuderias]
+    esc = db.query(Escuderia).filter(Escuderia.owner_id == owner_id).all()
+    df1 = pd.DataFrame(
+        [{"ID": e.id, "Nombre": e.nombre, "Pais": e.pais} for e in esc]
     )
 
-    pilotos = db.query(Piloto).filter(Piloto.owner_id == owner_id).all()
-    df_pilotos = pd.DataFrame(
+    pil = db.query(Piloto).filter(Piloto.owner_id == owner_id).all()
+    df2 = pd.DataFrame(
         [
             {
                 "ID": p.id,
@@ -310,17 +318,17 @@ def generar_reportes(db: Session, owner_id: int):
                 "Número": p.numero,
                 "Escudería": p.escuderia.nombre if p.escuderia else None,
             }
-            for p in pilotos
+            for p in pil
         ]
     )
 
     gps = db.query(GranPremio).filter(GranPremio.owner_id == owner_id).all()
-    df_gps = pd.DataFrame(
+    df3 = pd.DataFrame(
         [{"ID": gp.id, "Nombre": gp.nombre, "Pais": gp.pais, "Fecha": gp.fecha} for gp in gps]
     )
 
-    resultados = db.query(Resultado).filter(Resultado.owner_id == owner_id).all()
-    df_resultados = pd.DataFrame(
+    res = db.query(Resultado).filter(Resultado.owner_id == owner_id).all()
+    df4 = pd.DataFrame(
         [
             {
                 "GP": r.gran_premio.nombre if r.gran_premio else None,
@@ -328,41 +336,39 @@ def generar_reportes(db: Session, owner_id: int):
                 "Escudería": r.piloto.escuderia.nombre if r.piloto and r.piloto.escuderia else None,
                 "Posición": r.posicion,
             }
-            for r in resultados
+            for r in res
         ]
     )
 
-    # Tabla campeonato
-    puntos_por_posicion = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
-    tabla_campeonato = []
-    for p in pilotos:
-        puntos = sum(puntos_por_posicion.get(r.posicion, 0) for r in p.resultados if r.owner_id == owner_id)
-        tabla_campeonato.append(
-            {
-                "Puesto": None,
-                "Piloto": p.nombre,
-                "Número": p.numero,
-                "Escudería": p.escuderia.nombre if p.escuderia else None,
-                "Puntos": puntos,
-            }
-        )
+    puntos = {1:25,2:18,3:15,4:12,5:10,6:8,7:6,8:4,9:2,10:1}
+    tabla = []
 
-    tabla_campeonato = sorted(tabla_campeonato, key=lambda x: x["Puntos"], reverse=True)
-    for i, fila in enumerate(tabla_campeonato, start=1):
+    for p in pil:
+        total = sum(puntos.get(r.posicion, 0) for r in p.resultados if r.owner_id == owner_id)
+        tabla.append({
+            "Puesto": None,
+            "Piloto": p.nombre,
+            "Número": p.numero,
+            "Escudería": p.escuderia.nombre if p.escuderia else None,
+            "Puntos": total,
+        })
+
+    tabla = sorted(tabla, key=lambda x: x["Puntos"], reverse=True)
+    for i, fila in enumerate(tabla, start=1):
         fila["Puesto"] = i
 
-    df_campeonato = pd.DataFrame(tabla_campeonato)
+    df5 = pd.DataFrame(tabla)
 
     with pd.ExcelWriter("reportes_f1.xlsx", engine="openpyxl") as writer:
-        if not df_escuderias.empty:
-            df_escuderias.to_excel(writer, sheet_name="Escuderías", index=False)
-        if not df_pilotos.empty:
-            df_pilotos.to_excel(writer, sheet_name="Pilotos", index=False)
-        if not df_gps.empty:
-            df_gps.to_excel(writer, sheet_name="Grandes Premios", index=False)
-        if not df_resultados.empty:
-            df_resultados.to_excel(writer, sheet_name="Resultados", index=False)
-        if not df_campeonato.empty:
-            df_campeonato.to_excel(writer, sheet_name="Campeonato Pilotos", index=False)
+        if not df1.empty:
+            df1.to_excel(writer, sheet_name="Escuderías", index=False)
+        if not df2.empty:
+            df2.to_excel(writer, sheet_name="Pilotos", index=False)
+        if not df3.empty:
+            df3.to_excel(writer, sheet_name="Grandes Premios", index=False)
+        if not df4.empty:
+            df4.to_excel(writer, sheet_name="Resultados", index=False)
+        if not df5.empty:
+            df5.to_excel(writer, sheet_name="Campeonato Pilotos", index=False)
 
-    return "Archivo 'reportes_f1.xlsx' generado correctamente con el campeonato incluido."
+    return "Reporte generado"
