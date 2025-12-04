@@ -5,7 +5,7 @@ import os
 # usa variables de entorno en render
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://umtxiaty2errvkxs6o64:C69hhyXlJnmLgJ3KU08SXsQeaXvKCu@baifac8wkppzbnznf5nx-postgresql.services.clever-cloud.com:5432/baifac8wkppzbnznf5nx"
+    "postgresql://us4teeml372nf9mpeihr:pAUq3DWX1iSJJn2BVZgEfqmCxEfVlL@bzfcugiuoiemcxv5dhfv-postgresql.services.clever-cloud.com:5432/bzfcugiuoiemcxv5dhfv"
 )
 
 engine = create_engine(
