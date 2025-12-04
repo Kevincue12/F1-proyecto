@@ -135,13 +135,28 @@
     </div>
 
     <div class="user">
-      <!-- Corregido: antes intentaba usar escuderia.id y no existe -->
-      <img src="/static/img/user-placeholder.png">
-      <div>
+    <div style="
+        width:46px;
+        height:46px;
+        border-radius:50%;
+        border:2px solid var(--accent);
+        background:var(--card);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-weight:900;
+        font-size:1.2rem;
+        color:#fff;
+    ">
+        {{ user.username[:1] | upper }}
+    </div>
+
+    <div>
         <strong>{{ user.username }}</strong><br>
         <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
-      </div>
     </div>
+    </div>
+
 
     <nav>
       <a href="/dashboard">🏁 Dashboard</a>

@@ -110,13 +110,29 @@
       <h2>F1 Manager</h2>
     </div>
 
-    <div class="user">
-      <img src="/static/img/user-placeholder.png">
-      <div>
-        <strong>{{ user.username }}</strong><br>
-        <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
-      </div>
+  <div class="user">
+    <div style="
+        width:46px;
+        height:46px;
+        border-radius:50%;
+        border:2px solid var(--accent);
+        background:var(--card);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-weight:900;
+        font-size:1.2rem;
+        color:#fff;
+    ">
+      {{ user.username[:1] | upper }}
     </div>
+
+    <div>
+      <strong>{{ user.username }}</strong><br>
+      <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+    </div>
+  </div>
+
 
     <nav>
       <a href="/dashboard">🏁 Dashboard</a>
