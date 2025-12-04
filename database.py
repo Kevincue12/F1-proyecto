@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "postgresql://ufmywtllyvkjossfaovu:PSy0HtVX9VtK1o5YziAXgVTfLwDQZq@bqq0odfjllt6x7fmua8l-postgresql.services.clever-cloud.com:5432/bqq0odfjllt6x7fmua8l"
+DATABASE_URL = "postgresql://urkeuyjxokgw5cshigb4:oua9RsoQ7Vx9t0g760DiXJxjP8ShMY@bn80ksk4mopvfgmrudir-postgresql.services.clever-cloud.com:5432/bn80ksk4mopvfgmrudir"
 
 engine = create_engine(
     DATABASE_URL,

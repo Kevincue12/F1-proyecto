@@ -139,6 +139,7 @@
     </div>
 
     <div class="user">
+      <!-- Imagen del usuario (no del piloto, por eso lo corregimos) -->
       <img src="/static/img/user-placeholder.png">
       <div>
         <strong>{{ user.username }}</strong><br>
@@ -212,7 +213,10 @@
         <tbody>
           {% for p in pilotos %}
           <tr>
-            <td><img class="thumb" src="{{ p.foto or '/static/img/pilot-placeholder.png' }}"></td>
+
+            <!-- FOTO DESDE LA BASE DE DATOS -->
+            <td><img class="thumb" src="/foto/piloto/{{ p.id }}"></td>
+
             <td>{{ p.nombre }}</td>
             <td>{{ p.numero }}</td>
             <td>{{ p.nacionalidad }}</td>
@@ -232,7 +236,6 @@
                  onclick="return confirm('¿Eliminar este piloto?');">
                 ❌ Eliminar
               </a>
-
 
             </td>
           </tr>

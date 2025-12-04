@@ -182,7 +182,6 @@
           🔎 <input placeholder="Buscar piloto o escudería...">
         </div>
 
-        <!-- AHORA este botón lleva a la página de pilotos -->
         <button class="btn" onclick="window.location.href='/pilotos_page'">Nuevo Piloto</button>
       </div>
     </div>
@@ -245,7 +244,11 @@
             <tbody>
               {% for p in pilotos %}
               <tr>
-                <td><img class="thumb" src="{{ p.foto or '/static/img/pilot-placeholder.png' }}"></td>
+                <td>
+                  <img class="thumb"
+                       src="/foto/piloto/{{ p.id }}"
+                       onerror="this.src='/static/img/pilot-placeholder.png'">
+                </td>
                 <td>{{ p.nombre }}</td>
                 <td>{{ p.numero }}</td>
                 <td>{{ p.escuderia.nombre if p.escuderia else '-' }}</td>
@@ -267,7 +270,11 @@
             <tbody>
               {% for e in escuderias %}
               <tr>
-                <td><img class="thumb" src="{{ e.foto or '/static/img/team-placeholder.png' }}"></td>
+                <td>
+                  <img class="thumb"
+                       src="/foto/escuderia/{{ e.id }}"
+                       onerror="this.src='/static/img/team-placeholder.png'">
+                </td>
                 <td>{{ e.nombre }}</td>
                 <td>{{ e.pais }}</td>
               </tr>

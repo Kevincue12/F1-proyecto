@@ -3,14 +3,15 @@ from typing import Optional, List
 from datetime import date
 from fastapi import Form, UploadFile, File
 
-# ------------- Auth -------------
+# ======================
+# AUTH
+# ======================
+
 class UserBase(BaseModel):
     username: str
 
-
 class UserCreate(UserBase):
     password: str
-
 
 class UserOut(UserBase):
     id: int
@@ -18,11 +19,9 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
-
 class Token(BaseModel):
     access_token: str
     token_type: str
-
 
 class LoginForm:
     def __init__(self, username: str = Form(...), password: str = Form(...)):
@@ -30,58 +29,70 @@ class LoginForm:
         self.password = password
 
 
-# ------------- Dominios F1 -------------
+# ======================
+# PILOTOS
+# ======================
 
-# ----- Pilotos -----
 class PilotoBase(BaseModel):
     nombre: str
     numero: int
     nacionalidad: str
     campeonatos_pilotos: int
     escuderia_id: int
-    foto: Optional[str] = None  # Ruta guardada de la imagen
-
+    foto: Optional[bytes] = None   # bytes para BD
 
 class PilotoCreate(PilotoBase):
     pass
 
-
-class PilotoOut(PilotoBase):
+class PilotoOut(BaseModel):
     id: int
+    nombre: str
+    numero: int
+    nacionalidad: str
+    campeonatos_pilotos: int
+    escuderia_id: int
+    tiene_foto: bool = False       # no enviamos bytes pesados
 
     class Config:
         from_attributes = True
 
 
-# ----- Escuderías -----
+# ======================
+# ESCUDERIAS
+# ======================
+
 class EscuderiaBase(BaseModel):
     nombre: str
     pais: str
     campeonatos_constructores: int = 0
-    foto: Optional[str] = None  # ← debe coincidir con models.Escuderia.foto
-
+    foto: Optional[bytes] = None
 
 class EscuderiaCreate(EscuderiaBase):
     pass
 
-
-class EscuderiaOut(EscuderiaBase):
+class EscuderiaOut(BaseModel):
     id: int
+    nombre: str
+    pais: str
+    campeonatos_constructores: int
+    tiene_foto: bool = False
     pilotos: List[PilotoOut] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
 
 
-# ----- Grandes Premios -----
+# ======================
+# GRANDES PREMIOS
+# ======================
+
 class GranPremioBase(BaseModel):
     nombre: str
     fecha: date
-
+    pais: Optional[str] = None   # ← agregado porque models.py lo tiene
 
 class GranPremioCreate(GranPremioBase):
     pass
-
 
 class GranPremioOut(GranPremioBase):
     id: int
@@ -90,15 +101,16 @@ class GranPremioOut(GranPremioBase):
         from_attributes = True
 
 
-# ----- Resultados -----
+# ======================
+# RESULTADOS
+# ======================
+
 class ResultadoBase(BaseModel):
     posicion: int
-
 
 class ResultadoCreate(ResultadoBase):
     piloto_numero: int
     gran_premio_id: int
-
 
 class ResultadoOut(ResultadoBase):
     id: int
@@ -108,16 +120,12 @@ class ResultadoOut(ResultadoBase):
     class Config:
         from_attributes = True
 
-
-# Resultado para tablas unidas
 class ResultadoTabla(BaseModel):
     posicion: int
     piloto: str
     numero: int
     escuderia: Optional[str]
 
-
-# Tabla de campeonato
 class CampeonatoFila(BaseModel):
     puesto: int
     piloto: str
@@ -126,9 +134,9 @@ class CampeonatoFila(BaseModel):
     puntos: int
 
 
-# -----------------------------------------------------------
-# FORMULARIOS ESPECIALES PARA SUBIR FOTOS (para usar con Depends)
-# -----------------------------------------------------------
+# ======================
+# FORMULARIOS PARA CREAR (con fotos)
+# ======================
 
 class EscuderiaForm:
     def __init__(
@@ -136,13 +144,12 @@ class EscuderiaForm:
         nombre: str = Form(...),
         pais: str = Form(...),
         campeonatos_constructores: int = Form(0),
-        foto: UploadFile = File(None),
+        foto: UploadFile = File(None)
     ):
         self.nombre = nombre
         self.pais = pais
         self.campeonatos_constructores = campeonatos_constructores
         self.foto = foto
-
 
 class PilotoForm:
     def __init__(
@@ -152,7 +159,7 @@ class PilotoForm:
         nacionalidad: str = Form(...),
         campeonatos_pilotos: int = Form(0),
         escuderia_id: int = Form(...),
-        foto: UploadFile = File(None),
+        foto: UploadFile = File(None)
     ):
         self.nombre = nombre
         self.numero = numero

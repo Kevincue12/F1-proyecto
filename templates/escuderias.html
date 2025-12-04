@@ -104,7 +104,6 @@
       background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#fff;
     }
 
-    /* BOTONES DE ACCIÓN */
     .action-btn{
       padding:6px 10px;
       font-size:0.8rem;
@@ -115,14 +114,8 @@
       text-decoration:none;
       display:inline-block;
     }
-    .edit-btn{
-      background:#ffc107;
-      color:#000;
-    }
-    .delete-btn{
-      background:#dc3545;
-      color:#fff;
-    }
+    .edit-btn{ background:#ffc107; color:#000; }
+    .delete-btn{ background:#dc3545; color:#fff; }
 
     footer{
       margin-top:18px;color:var(--muted);font-size:0.85rem;text-align:center;
@@ -142,6 +135,7 @@
     </div>
 
     <div class="user">
+      <!-- Corregido: antes intentaba usar escuderia.id y no existe -->
       <img src="/static/img/user-placeholder.png">
       <div>
         <strong>{{ user.username }}</strong><br>
@@ -204,7 +198,10 @@
         <tbody>
           {% for e in escuderias %}
           <tr>
-            <td><img class="thumb" src="{{ e.foto or '/static/img/team-placeholder.png' }}"></td>
+
+            <!-- Mostrar foto desde la base de datos -->
+            <td><img class="thumb" src="/foto/escuderia/{{ e.id }}"></td>
+
             <td>{{ e.nombre }}</td>
             <td>{{ e.pais }}</td>
             <td>{{ e.campeonatos_constructores }}</td>

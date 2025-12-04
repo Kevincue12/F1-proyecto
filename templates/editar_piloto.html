@@ -139,7 +139,7 @@
       <form action="/pilotos/{{ piloto.id }}/editar" method="post" enctype="multipart/form-data">
 
         <label>Foto actual</label>
-        <img class="thumb" src="{{ piloto.foto or '/static/img/pilot-placeholder.png' }}">
+        <img class="thumb" src="/foto/piloto/{{ piloto.id }}">
 
         <label>Subir nueva foto</label>
         <input type="file" name="foto" accept="image/*">

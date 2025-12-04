@@ -147,7 +147,7 @@
       <form action="/escuderias/{{ escuderia.id }}/editar" method="post" enctype="multipart/form-data">
 
         <label>Logo / Foto Actual</label>
-        <img class="thumb" src="{{ escuderia.foto or '/static/img/team-placeholder.png' }}">
+        <img class="thumb" src="/foto/escuderia/{{ escuderia.id }}">
 
         <label>Subir nueva foto</label>
         <input type="file" name="foto" accept="image/*">

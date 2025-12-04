@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from database import Base
+from sqlalchemy import LargeBinary
 
 
 class User(Base):
@@ -10,7 +11,6 @@ class User(Base):
     username = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
 
-    # Relaciones inversas
     escuderias = relationship("Escuderia", back_populates="owner", cascade="all, delete")
     pilotos = relationship("Piloto", back_populates="owner", cascade="all, delete")
     grandes_premios = relationship("GranPremio", back_populates="owner", cascade="all, delete")
@@ -25,13 +25,12 @@ class Escuderia(Base):
     pais = Column(String(100))
     campeonatos_constructores = Column(Integer, default=0)
 
-    foto = Column(String(255), nullable=True)   # ← CAMBIADO DE "logo" a "foto"
+    foto = Column(LargeBinary)
 
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="escuderias")
 
     pilotos = relationship("Piloto", back_populates="escuderia", cascade="all, delete")
-
 
 
 class Piloto(Base):
@@ -45,7 +44,7 @@ class Piloto(Base):
 
     escuderia_id = Column(Integer, ForeignKey("escuderias.id", ondelete="CASCADE"))
 
-    foto = Column(String(255), nullable=True)  # ← CORRECTO, COINCIDE CON main.py
+    foto = Column(LargeBinary)
 
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="pilotos")
@@ -59,7 +58,7 @@ class GranPremio(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), index=True)
-    pais = Column(String(100))
+
     fecha = Column(Date, nullable=False)
 
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
