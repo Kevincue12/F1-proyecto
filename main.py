@@ -32,7 +32,6 @@ templates = Jinja2Templates(directory="templates")
 # ======================================================
 models.Base.metadata.create_all(bind=engine)
 
-
 def get_db():
     db = SessionLocal()
     try:
@@ -47,16 +46,13 @@ def get_db():
 def index():
     return FileResponse("templates/index.html")
 
-
 @app.get("/login")
 def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-
 @app.get("/register")
 def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
-
 
 # ======================================================
 # REGISTRO
@@ -103,7 +99,6 @@ async def login_for_access_token(
 
     return response
 
-
 # ======================================================
 # LOGOUT
 # ======================================================
@@ -112,7 +107,6 @@ def logout():
     resp = RedirectResponse("/", status_code=302)
     resp.delete_cookie("access_token")
     return resp
-
 
 # ======================================================
 # ESCUDERÍAS – API
@@ -142,14 +136,12 @@ async def crear_escuderia(
 
     return crud.create_escuderia(db, esc_data, owner_id=current_user.id)
 
-
 @app.get("/escuderias/", response_model=List[schemas.EscuderiaOut])
 def listar_escuderias(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     return crud.get_escuderias(db, owner_id=current_user.id)
-
 
 # ======================================================
 # ESCUDERÍAS – PÁGINA HTML
@@ -165,7 +157,6 @@ def escuderias_page(
         "escuderias.html",
         {"request": request, "user": current_user, "escuderias": escs}
     )
-
 
 # ======================================================
 # ESCUDERÍAS – EDITAR / ELIMINAR
@@ -186,7 +177,6 @@ def editar_escuderia_form(
         {"request": request, "user": current_user, "escuderia": esc}
     )
 
-
 @app.post("/escuderias/{id}/editar")
 async def editar_escuderia(
     id: int,
@@ -201,10 +191,8 @@ async def editar_escuderia(
     if not esc:
         raise HTTPException(404, "Escudería no encontrada")
 
-    # --- conservar foto actual ---
     ruta = esc.foto
 
-    # --- SOLO si realmente subió foto nueva ---
     if foto and foto.filename and foto.filename.strip():
         nombre_unico = f"{uuid.uuid4()}_{foto.filename}"
         ruta = f"static/uploads/escuderias/{nombre_unico}"
@@ -233,7 +221,6 @@ def eliminar_escuderia(
         raise HTTPException(404, "Escudería no encontrada")
 
     return RedirectResponse("/escuderias_page", status_code=303)
-
 
 # ======================================================
 # PILOTOS – API
@@ -267,14 +254,12 @@ async def crear_piloto(
 
     return crud.create_piloto(db, data, owner_id=current_user.id)
 
-
 @app.get("/pilotos/", response_model=List[schemas.PilotoOut])
 def listar_pilotos(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     return crud.get_pilotos(db, owner_id=current_user.id)
-
 
 # ======================================================
 # PILOTOS – PÁGINA HTML
@@ -292,7 +277,6 @@ def pilotos_page(
         "pilotos.html",
         {"request": request, "user": current_user, "pilotos": pilotos, "escuderias": escs}
     )
-
 
 # ======================================================
 # PILOTOS – EDITAR / ELIMINAR
@@ -318,7 +302,6 @@ def editar_piloto_form(
         {"request": request, "user": current_user, "piloto": piloto, "escuderias": escs}
     )
 
-
 @app.post("/pilotos/{piloto_id}/editar")
 async def editar_piloto(
     piloto_id: int,
@@ -340,10 +323,8 @@ async def editar_piloto(
     if not piloto_db:
         raise HTTPException(status_code=404, detail="Piloto no encontrado")
 
-    # conservar foto actual
-    ruta = piloto_db.foto  
+    ruta = piloto_db.foto
 
-    # SOLO si realmente se subió una nueva foto
     if foto and foto.filename and foto.filename.strip():
         nombre_unico = f"{uuid.uuid4()}_{foto.filename}"
         ruta = f"static/uploads/pilotos/{nombre_unico}"
@@ -377,39 +358,94 @@ def eliminar_piloto(
 
     return RedirectResponse("/pilotos_page", status_code=303)
 
-
-
 # ======================================================
-# GRANDES PREMIOS
+# GRANDES PREMIOS – API
 # ======================================================
 @app.post("/grandes_premios/", response_model=schemas.GranPremioOut)
 def crear_gp(
-    gp: schemas.GranPremioCreate,
+    nombre: str = Form(...),
+    fecha: str = Form(...),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    gp = schemas.GranPremioCreate(
+        nombre=nombre,
+        fecha=fecha
+    )
+
     return crud.create_gran_premio(db, gp, owner_id=current_user.id)
 
-
-@app.get("/grandes_premios/", response_model=List[schemas.GranPremioOut])
-def listar_gp(
+# ======================================================
+# GRANDES PREMIOS – PÁGINA HTML
+# ======================================================
+@app.get("/grandes_premios_page", response_class=HTMLResponse)
+def grandes_premios_page(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return crud.get_grandes_premios(db, owner_id=current_user.id)
+    gps = crud.get_grandes_premios(db, owner_id=current_user.id)
 
+    return templates.TemplateResponse(
+        "grandes_premios.html",
+        {
+            "request": request,
+            "user": current_user,
+            "grandes_premios": gps
+        }
+    )
 
 # ======================================================
-# RESULTADOS
+# RESULTADOS – FORM WEB
 # ======================================================
+# ======================================================
+# RESULTADOS – PÁGINA HTML
+# ======================================================
+@app.get("/resultados_page", response_class=HTMLResponse)
+def resultados_page(
+    request: Request,
+    gp_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    gp = crud.get_gran_premio(db, gp_id, owner_id=current_user.id)
+    if not gp:
+        return RedirectResponse("/grandes_premios_page", status_code=302)
+
+    pilotos = crud.get_pilotos(db, owner_id=current_user.id)
+    resultados = crud.get_resultados_por_gp(db, gp_id, owner_id=current_user.id)
+
+    return templates.TemplateResponse(
+        "resultados.html",
+        {
+            "request": request,
+            "user": current_user,
+            "gp": gp,
+            "pilotos": pilotos,
+            "resultados": resultados
+        }
+    )
+
+
 @app.post("/resultados/", response_model=schemas.ResultadoOut)
 def crear_resultado(
-    resultado: schemas.ResultadoCreate,
+    gran_premio_id: int = Form(...),
+    piloto_numero: int = Form(...),
+    posicion: int = Form(...),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return crud.create_resultado(db, resultado, owner_id=current_user.id)
 
+    data = schemas.ResultadoCreate(
+        gran_premio_id=gran_premio_id,
+        piloto_numero=piloto_numero,
+        posicion=posicion
+    )
+
+    return crud.create_resultado(db, data, owner_id=current_user.id)
+
+
+    return RedirectResponse("/resultados_page", status_code=303)
 
 # ======================================================
 # CAMPEONATO
@@ -420,7 +456,6 @@ def campeonato(
     current_user: models.User = Depends(get_current_user)
 ):
     return crud.get_campeonato_pilotos(db, owner_id=current_user.id)
-
 
 # ======================================================
 # DASHBOARD FINAL
@@ -447,7 +482,6 @@ def dashboard(
             "grandes_premios": gps
         }
     )
-
 
 # ======================================================
 # EXPORTAR EXCEL

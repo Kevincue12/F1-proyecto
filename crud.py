@@ -177,6 +177,15 @@ def get_grandes_premios(db: Session, owner_id: int):
     return db.query(GranPremio).filter(GranPremio.owner_id == owner_id).all()
 
 
+# 🔹 NUEVA FUNCIÓN: obtener un GP específico
+def get_gran_premio(db: Session, gp_id: int, owner_id: int):
+    return (
+        db.query(GranPremio)
+        .filter(GranPremio.id == gp_id, GranPremio.owner_id == owner_id)
+        .first()
+    )
+
+
 # ---------------- RESULTADOS ----------------
 def create_resultado(db: Session, resultado: ResultadoCreate, owner_id: int):
     if not resultado.posicion or not resultado.gran_premio_id or not resultado.piloto_numero:
@@ -336,4 +345,3 @@ def generar_reportes(db: Session, owner_id: int):
             df_campeonato.to_excel(writer, sheet_name="Campeonato Pilotos", index=False)
 
     return "Archivo 'reportes_f1.xlsx' generado correctamente con el campeonato incluido."
-

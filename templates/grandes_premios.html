@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pilotos - F1 Manager</title>
+  <title>Grandes Premios - F1 Manager</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&display=swap" rel="stylesheet">
 
   <style>
@@ -28,15 +28,13 @@
 
     .sidebar{
       width:260px;
-      background:linear-gradient(180deg,#0f0f10, #0b0b0c);
+      background:linear-gradient(180deg,#0f0f10,#0b0b0c);
       padding:28px 20px;
       border-right:1px solid rgba(255,255,255,0.05);
       position:sticky;top:0;height:100vh;
     }
 
-    .logo{
-      display:flex;align-items:center;gap:12px;margin-bottom:28px;
-    }
+    .logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
     .logo .dot{
       width:44px;height:44px;border-radius:10px;background:var(--accent);
       box-shadow:0 6px 20px rgba(225,6,0,0.25);
@@ -50,21 +48,17 @@
     .user img{
       width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);
     }
+
     nav{margin-top:26px;}
     nav a{
       display:block;padding:12px;border-radius:10px;
-      color:#cfcfcf;text-decoration:none;margin-bottom:6px;
-      transition:0.2s;
+      color:#cfcfcf;text-decoration:none;margin-bottom:6px;transition:0.2s;
     }
-    nav a:hover{
-      background:var(--hover);
-      color:#fff;
-    }
+    nav a:hover{background:var(--hover);color:#fff;}
 
     .mutebtn{
       margin-top:20px;background:transparent;border:1px solid rgba(255,255,255,0.15);
-      color:#ddd;padding:8px 10px;border-radius:8px;width:100%;cursor:pointer;
-      transition:0.2s;
+      color:#ddd;padding:8px 10px;border-radius:8px;width:100%;cursor:pointer;transition:0.2s;
     }
     .mutebtn:hover{background:var(--hover);}
 
@@ -76,7 +70,8 @@
 
     .btn{
       background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;
-      border:0;cursor:pointer;font-weight:700;transition:0.2s;box-shadow:0 4px 14px rgba(225,6,0,0.35);
+      border:0;cursor:pointer;font-weight:700;transition:0.2s;
+      box-shadow:0 4px 14px rgba(225,6,0,0.35);
     }
     .btn:hover{transform:scale(1.04);}
 
@@ -92,42 +87,23 @@
     }
     th{color:var(--muted);font-size:0.8rem;letter-spacing:0.5px;}
 
-    .thumb{
-      width:48px;height:36px;object-fit:cover;border-radius:8px;
-      border:1px solid rgba(255,255,255,0.1);
-    }
-
-    input, select{
+    input{
       width:100%;padding:10px;margin-bottom:10px;border-radius:10px;
       background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#fff;
     }
 
     .action-btn{
-      padding:6px 10px;
-      font-size:0.8rem;
-      font-weight:700;
-      border-radius:8px;
-      border:none;
-      cursor:pointer;
-      text-decoration:none;
-      display:inline-block;
+      padding:6px 10px;font-size:0.8rem;font-weight:700;border-radius:8px;
+      border:none;cursor:pointer;text-decoration:none;display:inline-block;
     }
 
-    .edit-btn{
-      background:#ffc107;
-      color:#000;
-    }
-
-    .delete-btn{
-      background:#dc3545;
-      color:#fff;
-    }
-
-    @media(max-width:900px){
-      .sidebar{display:none;}
+    .add-btn{
+      background:#17a2b8;
+      color:white;
     }
   </style>
 </head>
+
 <body>
 <div class="wrap">
 
@@ -161,7 +137,7 @@
 
     <div class="header">
       <div>
-        <h1 style="margin:0;font-weight:900">Gestión de Pilotos</h1>
+        <h1 style="margin:0;font-weight:900">Gestión de Grandes Premios</h1>
         <div style="color:var(--muted);margin-top:4px">
           Usuario: {{ user.username }}
         </div>
@@ -170,70 +146,40 @@
       <button class="btn" onclick="window.location.href='/dashboard'">← Volver al Dashboard</button>
     </div>
 
-    <!-- Formulario Crear Piloto -->
+    <!-- FORMULARIO CREAR GP -->
     <section class="panel">
-      <h3 style="margin-top:0">Crear Piloto</h3>
-      <form action="/pilotos/" method="post" enctype="multipart/form-data">
-        <input name="nombre" placeholder="Nombre" required>
-        <input name="numero" type="number" placeholder="Número" required>
-        <input name="nacionalidad" placeholder="Nacionalidad" required>
-        <input name="campeonatos_pilotos" type="number" min="0" value="0" placeholder="Campeonatos pilotos" required>
+      <h3 style="margin-top:0">Crear Gran Premio</h3>
 
-        <select name="escuderia_id" required>
-          <option value="">Selecciona una escudería</option>
-          {% for e in escuderias %}
-            <option value="{{ e.id }}">{{ e.nombre }}</option>
-          {% endfor %}
-        </select>
+      <form action="/grandes_premios/" method="post">
+        <input name="nombre" placeholder="Nombre del Gran Premio" required>
+        <input type="date" name="fecha" required>
 
-        <input type="file" name="foto" accept="image/*">
-
-        <button class="btn" type="submit">Crear Piloto</button>
+        <button class="btn" type="submit">Crear GP</button>
       </form>
     </section>
 
-    <!-- Lista de pilotos -->
+    <!-- LISTA DE GPs -->
     <section class="panel">
-      <h3 style="margin-top:0">Mis Pilotos</h3>
+      <h3 style="margin-top:0">Grandes Premios Registrados</h3>
 
-      {% if pilotos %}
+      {% if grandes_premios %}
       <table>
         <thead>
           <tr>
-            <th></th>
-            <th>Piloto</th>
-            <th>Número</th>
-            <th>Nacionalidad</th>
-            <th>Escudería</th>
-            <th>Campeonatos</th>
-            <th>Acciones</th>
+            <th>Nombre</th>
+            <th>Fecha</th>
+            <th>Resultados</th>
           </tr>
         </thead>
         <tbody>
-          {% for p in pilotos %}
+          {% for gp in grandes_premios %}
           <tr>
-            <td><img class="thumb" src="{{ p.foto or '/static/img/pilot-placeholder.png' }}"></td>
-            <td>{{ p.nombre }}</td>
-            <td>{{ p.numero }}</td>
-            <td>{{ p.nacionalidad }}</td>
-            <td>{{ p.escuderia.nombre if p.escuderia else '-' }}</td>
-            <td>{{ p.campeonatos_pilotos }}</td>
-
-            <td style="display:flex; gap:8px">
-
-              <!-- EDITAR -->
-              <a class="action-btn edit-btn" href="/pilotos/{{ p.id }}/editar_form">
-                ✏️ Editar
+            <td>{{ gp.nombre }}</td>
+            <td>{{ gp.fecha }}</td>
+            <td>
+              <a class="action-btn add-btn" href="/resultados_page?gp_id={{ gp.id }}">
+                ➕ Agregar Resultados
               </a>
-
-              <!-- ELIMINAR -->
-              <a class="action-btn delete-btn"
-                 href="/pilotos/{{ p.id }}/eliminar"
-                 onclick="return confirm('¿Eliminar este piloto?');">
-                ❌ Eliminar
-              </a>
-
-
             </td>
           </tr>
           {% endfor %}
@@ -241,13 +187,12 @@
       </table>
 
       {% else %}
-        <p style="color:var(--muted)">No tienes pilotos creados.</p>
+        <p style="color:var(--muted)">No se han registrado Grandes Premios.</p>
       {% endif %}
     </section>
 
-    <footer>F1 Manager • Gestión de Pilotos</footer>
-
   </main>
+
 </div>
 </body>
 </html>

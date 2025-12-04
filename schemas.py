@@ -76,7 +76,6 @@ class EscuderiaOut(EscuderiaBase):
 # ----- Grandes Premios -----
 class GranPremioBase(BaseModel):
     nombre: str
-    pais: str
     fecha: date
 
 
