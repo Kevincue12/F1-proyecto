@@ -135,7 +135,7 @@
     </div>
 
     <div class="user">
-    <div style="
+      <div style="
         width:46px;
         height:46px;
         border-radius:50%;
@@ -147,16 +147,15 @@
         font-weight:900;
         font-size:1.2rem;
         color:#fff;
-    ">
+      ">
         {{ user.username[:1] | upper }}
-    </div>
+      </div>
 
-    <div>
+      <div>
         <strong>{{ user.username }}</strong><br>
         <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+      </div>
     </div>
-    </div>
-
 
     <nav>
       <a href="/dashboard">🏁 Dashboard</a>
@@ -214,8 +213,12 @@
           {% for e in escuderias %}
           <tr>
 
-            <!-- Mostrar foto desde la base de datos -->
-            <td><img class="thumb" src="/foto/escuderia/{{ e.id }}"></td>
+            <!-- Mostrar imagen estática -->
+            <td>
+              <img class="thumb"
+                   src="{{ e.foto_url }}"
+                   onerror="this.src='/static/img/team-placeholder.png'">
+            </td>
 
             <td>{{ e.nombre }}</td>
             <td>{{ e.pais }}</td>
@@ -223,12 +226,10 @@
 
             <td style="display:flex; gap:8px">
 
-              <!-- EDITAR -->
               <a class="action-btn edit-btn" href="/escuderias/{{ e.id }}/editar_form">
                 ✏️ Editar
               </a>
 
-              <!-- ELIMINAR -->
               <form action="/escuderias/{{ e.id }}/eliminar" method="post">
                 <button type="submit"
                         class="action-btn delete-btn"

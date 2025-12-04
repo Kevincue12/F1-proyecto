@@ -29,7 +29,14 @@ def create_escuderia(db: Session, escuderia: EscuderiaCreate, owner_id: int):
     if existente:
         raise HTTPException(status_code=400, detail="Ya tienes una escudería con ese nombre.")
 
-    db_esc = Escuderia(owner_id=owner_id, **escuderia.dict())
+    db_esc = Escuderia(
+        owner_id=owner_id,
+        nombre=escuderia.nombre,
+        pais=escuderia.pais,
+        campeonatos_constructores=escuderia.campeonatos_constructores,
+        foto=escuderia.foto  # solo nombre del archivo
+    )
+
     db.add(db_esc)
     db.commit()
     db.refresh(db_esc)
@@ -59,7 +66,10 @@ def update_escuderia(db: Session, escuderia_id: int, escuderia_data: EscuderiaCr
         if dup:
             raise HTTPException(status_code=400, detail="Ya tienes una escudería con ese nombre.")
 
-    for key, value in escuderia_data.dict().items():
+    data = escuderia_data.dict()
+    for key, value in data.items():
+        if key == "foto" and value is None:
+            continue  # no borrar la imagen si no se subió nueva
         setattr(esc, key, value)
 
     db.commit()
@@ -103,7 +113,16 @@ def create_piloto(db: Session, piloto: PilotoCreate, owner_id: int):
     if piloto_existente:
         raise HTTPException(status_code=400, detail=f"Ya tienes un piloto con el número {piloto.numero}.")
 
-    db_piloto = Piloto(owner_id=owner_id, **piloto.dict())
+    db_piloto = Piloto(
+        owner_id=owner_id,
+        nombre=piloto.nombre,
+        numero=piloto.numero,
+        nacionalidad=piloto.nacionalidad,
+        campeonatos_pilotos=piloto.campeonatos_pilotos,
+        escuderia_id=piloto.escuderia_id,
+        foto=piloto.foto  # solo nombre del archivo
+    )
+
     db.add(db_piloto)
     db.commit()
     db.refresh(db_piloto)
@@ -145,7 +164,10 @@ def update_piloto(db: Session, piloto_id: int, piloto_data: PilotoCreate, owner_
         if dup:
             raise HTTPException(status_code=400, detail=f"Ya tienes un piloto con el número {piloto_data.numero}.")
 
-    for key, value in piloto_data.dict().items():
+    data = piloto_data.dict()
+    for key, value in data.items():
+        if key == "foto" and value is None:
+            continue  # no borrar la imagen si no se subió nueva
         setattr(piloto, key, value)
 
     db.commit()
@@ -177,7 +199,6 @@ def get_grandes_premios(db: Session, owner_id: int):
     return db.query(GranPremio).filter(GranPremio.owner_id == owner_id).all()
 
 
-# 🔹 NUEVA FUNCIÓN: obtener un GP específico
 def get_gran_premio(db: Session, gp_id: int, owner_id: int):
     return (
         db.query(GranPremio)

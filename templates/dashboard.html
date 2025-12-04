@@ -49,9 +49,7 @@
       margin-top:18px;padding:14px;border-radius:12px;background:var(--glass);
       display:flex;gap:12px;align-items:center;
     }
-    .user img{
-      width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);
-    }
+
     nav{margin-top:26px;}
     nav a{
       display:block;padding:12px;border-radius:10px;
@@ -148,26 +146,18 @@
     </div>
 
     <div class="user">
-    <div style="
-        width:46px;
-        height:46px;
-        border-radius:50%;
-        border:2px solid var(--accent);
-        background:var(--card);
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-weight:900;
-        font-size:1.2rem;
-        color:#fff;
-    ">
+      <div style="
+        width:46px;height:46px;border-radius:50%;
+        border:2px solid var(--accent);background:var(--card);
+        display:flex;align-items:center;justify-content:center;
+        font-weight:900;font-size:1.2rem;color:#fff;">
         {{ user.username[:1] | upper }}
-    </div>
+      </div>
 
-    <div>
+      <div>
         <strong>{{ user.username }}</strong><br>
         <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
-    </div>
+      </div>
     </div>
 
     <nav>
@@ -233,15 +223,15 @@
     <div class="cards">
       <div class="card">
         <h3>Total Escuderías</h3>
-        <div class="value" style="font-size:1.7rem;font-weight:800">{{ escuderias|length }}</div>
+        <div style="font-size:1.7rem;font-weight:800">{{ escuderias|length }}</div>
       </div>
       <div class="card">
         <h3>Total Pilotos</h3>
-        <div class="value" style="font-size:1.7rem;font-weight:800">{{ pilotos|length }}</div>
+        <div style="font-size:1.7rem;font-weight:800">{{ pilotos|length }}</div>
       </div>
       <div class="card">
         <h3>Grandes Premios</h3>
-        <div class="value" style="font-size:1.7rem;font-weight:800">{{ grandes_premios|length if grandes_premios is defined else 0 }}</div>
+        <div style="font-size:1.7rem;font-weight:800">{{ grandes_premios|length if grandes_premios is defined else 0 }}</div>
       </div>
     </div>
 
@@ -261,8 +251,9 @@
               <tr>
                 <td>
                   <img class="thumb"
-                       src="/foto/piloto/{{ p.id }}"
-                       onerror="this.src='/static/img/pilot-placeholder.png'">
+                       src="{{ p.foto_url or '/static/img/pilotos/placeholder.png' }}"
+                       alt="Foto piloto"
+                       loading="lazy">
                 </td>
                 <td>{{ p.nombre }}</td>
                 <td>{{ p.numero }}</td>
@@ -287,8 +278,9 @@
               <tr>
                 <td>
                   <img class="thumb"
-                       src="/foto/escuderia/{{ e.id }}"
-                       onerror="this.src='/static/img/team-placeholder.png'">
+                       src="{{ e.foto_url or '/static/img/escuderias/placeholder.png' }}"
+                       alt="Foto escuderia"
+                       loading="lazy">
                 </td>
                 <td>{{ e.nombre }}</td>
                 <td>{{ e.pais }}</td>

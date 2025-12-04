@@ -44,10 +44,6 @@
       margin-top:18px;padding:14px;border-radius:12px;background:var(--glass);
       display:flex;gap:12px;align-items:center;
     }
-    .user img{
-      width:46px;height:46px;border-radius:50%;object-fit:cover;
-      border:2px solid var(--accent);
-    }
 
     nav{margin-top:26px;}
     nav a{
@@ -110,29 +106,27 @@
       <h2>F1 Manager</h2>
     </div>
 
-  <div class="user">
-    <div style="
+    <div class="user">
+      <div style="
         width:46px;
         height:46px;
         border-radius:50%;
-        border:2px solid var(--accent);
+        border:2px solid(var(--accent));
         background:var(--card);
         display:flex;
         align-items:center;
         justify-content:center;
         font-weight:900;
         font-size:1.2rem;
-        color:#fff;
-    ">
-      {{ user.username[:1] | upper }}
-    </div>
+        color:#fff;">
+        {{ user.username[:1] | upper }}
+      </div>
 
-    <div>
-      <strong>{{ user.username }}</strong><br>
-      <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+      <div>
+        <strong>{{ user.username }}</strong><br>
+        <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+      </div>
     </div>
-  </div>
-
 
     <nav>
       <a href="/dashboard">🏁 Dashboard</a>
@@ -163,7 +157,9 @@
       <form action="/escuderias/{{ escuderia.id }}/editar" method="post" enctype="multipart/form-data">
 
         <label>Logo / Foto Actual</label>
-        <img class="thumb" src="/foto/escuderia/{{ escuderia.id }}">
+        <img class="thumb"
+             src="{{ escuderia.foto_url or '/static/img/escuderias/placeholder.png' }}"
+             loading="lazy">
 
         <label>Subir nueva foto</label>
         <input type="file" name="foto" accept="image/*">

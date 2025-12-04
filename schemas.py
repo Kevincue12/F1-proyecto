@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import date
 from fastapi import Form, UploadFile, File
 
+
 # ======================
 # AUTH
 # ======================
@@ -19,9 +20,11 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class LoginForm:
     def __init__(self, username: str = Form(...), password: str = Form(...)):
@@ -39,11 +42,15 @@ class PilotoBase(BaseModel):
     nacionalidad: str
     campeonatos_pilotos: int
     escuderia_id: int
-    foto: Optional[bytes] = None   # bytes para BD
+    # Ahora solo guardamos el nombre del archivo
+    foto: Optional[str] = None
+
 
 class PilotoCreate(PilotoBase):
     pass
 
+
+# Lo que devolvemos al cliente (o al template HTML)
 class PilotoOut(BaseModel):
     id: int
     nombre: str
@@ -51,7 +58,8 @@ class PilotoOut(BaseModel):
     nacionalidad: str
     campeonatos_pilotos: int
     escuderia_id: int
-    tiene_foto: bool = False       # no enviamos bytes pesados
+    # ya no bytes ni tiene_foto
+    foto: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -65,17 +73,19 @@ class EscuderiaBase(BaseModel):
     nombre: str
     pais: str
     campeonatos_constructores: int = 0
-    foto: Optional[bytes] = None
+    foto: Optional[str] = None
+
 
 class EscuderiaCreate(EscuderiaBase):
     pass
+
 
 class EscuderiaOut(BaseModel):
     id: int
     nombre: str
     pais: str
     campeonatos_constructores: int
-    tiene_foto: bool = False
+    foto: Optional[str] = None
     pilotos: List[PilotoOut] = Field(default_factory=list)
 
     class Config:
@@ -90,8 +100,10 @@ class GranPremioBase(BaseModel):
     nombre: str
     fecha: date
 
+
 class GranPremioCreate(GranPremioBase):
     pass
+
 
 class GranPremioOut(GranPremioBase):
     id: int
@@ -107,9 +119,11 @@ class GranPremioOut(GranPremioBase):
 class ResultadoBase(BaseModel):
     posicion: int
 
+
 class ResultadoCreate(ResultadoBase):
     piloto_numero: int
     gran_premio_id: int
+
 
 class ResultadoOut(ResultadoBase):
     id: int
@@ -119,11 +133,13 @@ class ResultadoOut(ResultadoBase):
     class Config:
         from_attributes = True
 
+
 class ResultadoTabla(BaseModel):
     posicion: int
     piloto: str
     numero: int
     escuderia: Optional[str]
+
 
 class CampeonatoFila(BaseModel):
     puesto: int
@@ -134,7 +150,7 @@ class CampeonatoFila(BaseModel):
 
 
 # ======================
-# FORMULARIOS PARA CREAR (con fotos)
+# FORMULARIOS PARA CREAR
 # ======================
 
 class EscuderiaForm:
@@ -149,6 +165,7 @@ class EscuderiaForm:
         self.pais = pais
         self.campeonatos_constructores = campeonatos_constructores
         self.foto = foto
+
 
 class PilotoForm:
     def __init__(

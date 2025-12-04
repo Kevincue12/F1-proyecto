@@ -47,9 +47,7 @@
       margin-top:18px;padding:14px;border-radius:12px;background:var(--glass);
       display:flex;gap:12px;align-items:center;
     }
-    .user img{
-      width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);
-    }
+
     nav{margin-top:26px;}
     nav a{
       display:block;padding:12px;border-radius:10px;
@@ -131,7 +129,6 @@
 <body>
 <div class="wrap">
 
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="logo">
       <div class="dot"></div>
@@ -139,28 +136,23 @@
     </div>
 
     <div class="user">
-    <div style="
-        width:46px;
-        height:46px;
-        border-radius:50%;
+      <div style="
+        width:46px;height:46px;border-radius:50%;
         border:2px solid var(--accent);
         background:var(--card);
-        display:flex;
-        align-items:center;
+        display:flex;align-items:center;
         justify-content:center;
         font-weight:900;
         font-size:1.2rem;
-        color:#fff;
-    ">
+        color:#fff;">
         {{ user.username[:1] | upper }}
-    </div>
+      </div>
 
-    <div>
+      <div>
         <strong>{{ user.username }}</strong><br>
         <span style="color:var(--muted);font-size:0.8rem">Administrador</span>
+      </div>
     </div>
-    </div>
-
 
     <nav>
       <a href="/dashboard">🏁 Dashboard</a>
@@ -172,7 +164,6 @@
     <button class="mutebtn" onclick="window.location.href='/logout'">Cerrar sesión</button>
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
 
     <div class="header">
@@ -182,11 +173,9 @@
           Usuario: {{ user.username }}
         </div>
       </div>
-
       <button class="btn" onclick="window.location.href='/dashboard'">← Volver al Dashboard</button>
     </div>
 
-    <!-- Formulario Crear Piloto -->
     <section class="panel">
       <h3 style="margin-top:0">Crear Piloto</h3>
       <form action="/pilotos/" method="post" enctype="multipart/form-data">
@@ -208,7 +197,6 @@
       </form>
     </section>
 
-    <!-- Lista de pilotos -->
     <section class="panel">
       <h3 style="margin-top:0">Mis Pilotos</h3>
 
@@ -226,11 +214,16 @@
           </tr>
         </thead>
         <tbody>
+
           {% for p in pilotos %}
           <tr>
 
-            <!-- FOTO DESDE LA BASE DE DATOS -->
-            <td><img class="thumb" src="/foto/piloto/{{ p.id }}"></td>
+            <td>
+              <img class="thumb"
+                   src="{{ p.foto_url }}"
+                   onerror="this.src='/static/img/pilotos/placeholder.png'"
+                   loading="lazy">
+            </td>
 
             <td>{{ p.nombre }}</td>
             <td>{{ p.numero }}</td>
@@ -240,12 +233,10 @@
 
             <td style="display:flex; gap:8px">
 
-              <!-- EDITAR -->
               <a class="action-btn edit-btn" href="/pilotos/{{ p.id }}/editar_form">
                 ✏️ Editar
               </a>
 
-              <!-- ELIMINAR -->
               <a class="action-btn delete-btn"
                  href="/pilotos/{{ p.id }}/eliminar"
                  onclick="return confirm('¿Eliminar este piloto?');">
@@ -255,6 +246,7 @@
             </td>
           </tr>
           {% endfor %}
+
         </tbody>
       </table>
 

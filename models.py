@@ -1,8 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from database import Base
-from sqlalchemy import LargeBinary
-
 
 class User(Base):
     __tablename__ = "users"
@@ -25,7 +23,8 @@ class Escuderia(Base):
     pais = Column(String(100))
     campeonatos_constructores = Column(Integer, default=0)
 
-    foto = Column(LargeBinary)
+    # Solo guarda el NOMBRE del archivo
+    foto = Column(String, nullable=True)
 
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="escuderias")
@@ -44,7 +43,8 @@ class Piloto(Base):
 
     escuderia_id = Column(Integer, ForeignKey("escuderias.id", ondelete="CASCADE"))
 
-    foto = Column(LargeBinary)
+    # Igual: solo nombre del archivo
+    foto = Column(String, nullable=True)
 
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     owner = relationship("User", back_populates="pilotos")
