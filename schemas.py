@@ -89,7 +89,6 @@ class EscuderiaOut(BaseModel):
 class GranPremioBase(BaseModel):
     nombre: str
     fecha: date
-    pais: Optional[str] = None   # ← agregado porque models.py lo tiene
 
 class GranPremioCreate(GranPremioBase):
     pass
